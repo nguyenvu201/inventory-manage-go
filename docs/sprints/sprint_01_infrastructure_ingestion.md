@@ -20,7 +20,7 @@
 ## [INV-SPR01-TASK-001] — Setup Infrastructure
 
 > **Task ID:** `INV-SPR01-TASK-001`  
-> **Status:** 👀 IN_REVIEW  
+> **Status:** ❌ REJECTED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -51,6 +51,32 @@
 | 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — ready for sprint                                      |
 | 2026-04-12 | APPROVED       | IN_PROGRESS    | Developer    | Developer started work                                           |
 | 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | All ACs implemented: go.mod, docker-compose, migration, config, Makefile, README |
+| 2026-04-12 | IN_REVIEW      | REJECTED       | QA           | AC-01 FAIL: `pkg/` directory missing from project layout         |
+
+### QA Rejection Report — INV-SPR01-TASK-001
+
+**Verified ACs:**
+- [x] AC-02: ✅ docker-compose.yml correct — 3 services, all healthchecks present
+- [x] AC-03: ✅ Migration correct — hypertable, f_cnt unique index, LoRaWAN fields
+- [x] AC-04: ✅ config.go correct — env tags, required fields, no hardcoded secrets
+- [x] AC-05: ✅ Makefile complete — run, build, test, test-race, migrate, lint all present
+- [x] AC-06: ✅ README.md complete — arch diagram, quick start, config table
+
+**Failed ACs:**
+- [ ] AC-01: ❌ `pkg/` directory does not exist. AC-01 explicitly requires project layout: `cmd/`, `internal/`, **`pkg/`**, `config/`. All other directories are present.
+
+**Quality Gate Results (static review — Go binary not in system PATH):**
+- Hardcoded secrets: ✅ None found
+- Error handling: ✅ All errors wrapped with `fmt.Errorf("context: %w", err)`
+- Domain interfaces in `internal/domain/`: ✅
+- `.env` in `.gitignore`: ✅
+- Migration up + down files: ✅
+- Note: `_, _ = w.Write(...)` in health handler (main.go:41) — acceptable pattern for health endpoint
+
+**Required fix before re-review:**
+1. Create `pkg/` directory with a placeholder file (e.g., `pkg/README.md` or `pkg/.gitkeep`)
+
+**Estimated fix time:** < 5 minutes
 
 ---
 
