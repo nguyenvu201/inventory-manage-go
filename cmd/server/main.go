@@ -17,9 +17,13 @@ import (
 	"inventory-manage/internal/domain/telemetry"
 	inventorymqtt "inventory-manage/internal/platform/mqtt"
 	"inventory-manage/internal/repository/postgres"
+	"inventory-manage/internal/usecase"
+	"inventory-manage/internal/handler"
 	"inventory-manage/internal/worker"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -99,11 +103,24 @@ func main() {
 		}
 	}()
 
-	// Setup HTTP Server
-	router := http.NewServeMux()
-	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	deviceRepo := postgres.NewDeviceRepository(dbPool)
+	deviceUseCase := usecase.NewDeviceUseCase(deviceRepo)
+	deviceHandler := handler.NewDeviceHandler(deviceUseCase)
+
+	// Setup HTTP Server with chi
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	router.Route("/api/v1", func(r chi.Router) {
+		deviceHandler.RegisterRoutes(r)
 	})
 
 	srv := &http.Server{

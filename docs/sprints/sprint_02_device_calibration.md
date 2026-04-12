@@ -20,22 +20,22 @@
 ## [INV-SPR02-TASK-001] — Device Registry
 
 > **Task ID:** `INV-SPR02-TASK-001`  
-> **Status:** 🔍 PENDING_REVIEW  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 2  
 
 **Description:** Develop a CRUD API to manage scale node information and associate devices with SKU codes.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Create schema migration for `devices` table with fields: `device_id` (PK), `name`, `sku_code`, `location`, `status`, `created_at`, `updated_at`
-- [ ] AC-02: Implement `POST /api/v1/devices` — register a new device, return 201 Created
-- [ ] AC-03: Implement `GET /api/v1/devices` — list devices with filter support by `status` and `sku_code`
-- [ ] AC-04: Implement `GET /api/v1/devices/:id` — device detail, return 404 if not found
-- [ ] AC-05: Implement `PUT /api/v1/devices/:id` and `DELETE /api/v1/devices/:id`
-- [ ] AC-06: Return HTTP 422 with a detailed error list when `device_id` is duplicate or `sku_code` is invalid
-- [ ] AC-07: Write integration tests covering all 5 endpoints
+- [x] AC-01: Create schema migration for `devices` table with fields: `device_id` (PK), `name`, `sku_code`, `location`, `status`, `created_at`, `updated_at`
+- [x] AC-02: Implement `POST /api/v1/devices` — register a new device, return 201 Created
+- [x] AC-03: Implement `GET /api/v1/devices` — list devices with filter support by `status` and `sku_code`
+- [x] AC-04: Implement `GET /api/v1/devices/:id` — device detail, return 404 if not found
+- [x] AC-05: Implement `PUT /api/v1/devices/:id` and `DELETE /api/v1/devices/:id`
+- [x] AC-06: Return HTTP 422 with a detailed error list when `device_id` is duplicate or `sku_code` is invalid
+- [x] AC-07: Write integration tests covering all 5 endpoints
 
 **Related Technologies:**
 - HTTP Router: `chi` or `gin`
@@ -49,13 +49,43 @@
 |------------|-----------|----------------|--------------|------------------------------|
 | 2026-04-12 | —         | DRAFT          | BA           | Task created                 |
 | 2026-04-13 | DRAFT     | PENDING_REVIEW | BA           | Submitted for Lead approval  |
+| 2026-04-13 | PENDING_REVIEW | APPROVED  | Lead         | Implementation plan approved |
+| 2026-04-13 | APPROVED  | IN_PROGRESS    | Developer    | Started implementation       |
+| 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer    | PR + Tests passing, ready for QA |
+| 2026-04-13 | IN_REVIEW | REJECTED  | QA           | Tỷ lệ Test Coverage thấp hơn quy định (<80%) |
+| 2026-04-13 | REJECTED  | IN_PROGRESS | Developer  | Fixing test coverage     |
+| 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer  | Bổ sung tests, coverage đạt >89% |
+| 2026-04-13 | IN_REVIEW | VERIFIED  | QA         | All ACs verified. Coverage >= 80%. All gates pass. |
+| 2026-04-13 | VERIFIED  | CLOSED    | Lead       | Phê duyệt đóng task hoàn thiện |
 
 ---
+
+## QA Rejection Report — INV-SPR02-TASK-001
+
+**Verified ACs:**
+- [x] AC-01: ✅ Create schema migration
+- [x] AC-02: ✅ POST /api/v1/devices
+- [x] AC-03: ✅ GET /api/v1/devices
+- [x] AC-04: ✅ GET /api/v1/devices/:id
+- [x] AC-05: ✅ PUT /api/v1/devices/:id and DELETE
+- [x] AC-06: ✅ HTTP 422 on duplicate/invalid constraints
+- [x] AC-07: ✅ Integration tests written
+
+**Quality Gate Results:**
+- Build: ✅ pass
+- go vet: ✅ pass
+- Tests: ✅ pass
+- Race detector: ✅ pass
+- Coverage: ❌ FAIL — `internal/handler` (33.8%), `internal/usecase` (71.0%). Minimum requirement for both is >= 80%.
+
+**Required fixes before re-review:**
+1. Developer cần viết thêm Unit Test cho các func còn thiếu trong `internal/usecase/device_usecase_test.go` (đặc biệt là GetDevice, ListDevices, RemoveDevice)
+2. Bổ sung Unit Test cho `internal/handler/device_handler_test.go` (List, Update, Delete) để đẩy coverage lên >= 80%.
 
 ## [INV-SPR02-TASK-002] — Calibration Manager
 
 > **Task ID:** `INV-SPR02-TASK-002`  
-> **Status:** 📝 DRAFT  
+> **Status:** 🔍 PENDING_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -81,6 +111,7 @@
 | Date       | From | To    | Performed by | Notes        |
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
+| 2026-04-13 | DRAFT | PENDING_REVIEW | BA | Trình QA/Lead review thiết kế schema DB |
 
 ---
 

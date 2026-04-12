@@ -48,8 +48,8 @@
 
 | Task ID               | Task Name                              | Status     | Assignee | Updated     |
 |-----------------------|----------------------------------------|------------|----------|-------------|
-| INV-SPR02-TASK-001    | Device Registry                        | 🔍 PENDING_REVIEW | — | 2026-04-13  |
-| INV-SPR02-TASK-002    | Calibration Manager                    | 📝 DRAFT   | —        | 2026-04-12  |
+| INV-SPR02-TASK-001    | Device Registry                        | 🔒 CLOSED      | Developer | 2026-04-13  |
+| INV-SPR02-TASK-002    | Calibration Manager                    | 🔍 PENDING_REVIEW| —        | 2026-04-13  |
 | INV-SPR02-TASK-003    | Calibration Workflow                   | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR02-TASK-004    | Audit Trail                            | 📝 DRAFT   | —        | 2026-04-12  |
 
@@ -115,7 +115,7 @@
 | Sprint   | Total | DRAFT | IN_PROGRESS | VERIFIED | CLOSED |
 |----------|-------|-------|-------------|----------|--------|
 | Sprint 1 | 4     | 0     | 0           | 0        | 4      |
-| Sprint 2 | 4     | 4     | 0           | 0        | 0      |
+| Sprint 2 | 4     | 3     | 0           | 1        | 0      |
 | Sprint 3 | 7     | 7     | 0           | 0        | 0      |
 | Sprint 4 | 6     | 6     | 0           | 0        | 0      |
 | Sprint 5 | 5     | 5     | 0           | 0        | 0      |
