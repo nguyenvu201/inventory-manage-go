@@ -20,7 +20,7 @@
 ## [INV-SPR01-TASK-001] — Setup Infrastructure
 
 > **Task ID:** `INV-SPR01-TASK-001`  
-> **Status:** 🏆 VERIFIED  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -55,6 +55,7 @@
 | 2026-04-12 | REJECTED       | IN_PROGRESS    | Developer    | Rework: creating `pkg/` directory per QA rejection report        |
 | 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | Fix applied: `pkg/README.md` created — all 5 layout dirs present |
 | 2026-04-12 | IN_REVIEW      | VERIFIED       | QA           | All 6 ACs pass. AC-01 fix confirmed. Code review clean.          |
+| 2026-04-12 | VERIFIED       | CLOSED         | Lead         | Closed task after QA verification                                |
 
 ### QA Rejection Report — INV-SPR01-TASK-001
 
@@ -86,10 +87,10 @@
 ## [INV-SPR01-TASK-002] — Gateway Message Receiver
 
 > **Task ID:** `INV-SPR01-TASK-002`  
-> **Status:** ✅ APPROVED  
+> **Status:** 🔄 IN_PROGRESS  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 1  
 
 **Description:** Develop a service to receive telemetry messages from the Gateway via MQTT/ChirpStack, handle reconnection, and feed messages into the processing pipeline.
@@ -110,7 +111,7 @@
 - ChirpStack v4 Application Server API / Payload format
 - Pattern: pub/sub with buffered channel
 
-**Notes / Dependencies:** Depends on `INV-SPR01-TASK-001` (requires Docker + MQTT broker) — ⛔ awaiting TASK-001 completion
+**Notes / Dependencies:** Depends on `INV-SPR01-TASK-001` (requires Docker + MQTT broker) — ✅ TASK-001 completed
 
 **Status History:**
 | Date       | From           | To             | Performed by | Notes                          |
@@ -119,6 +120,7 @@
 | 2026-04-12 | DRAFT          | DRAFT          | BA           | AC-07/08/09 added — customer PDF requirement update |
 | 2026-04-12 | DRAFT          | PENDING_REVIEW | BA           | Submitted for Lead review      |
 | 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-001   |
+| 2026-04-12 | APPROVED       | IN_PROGRESS    | Developer    | Started implementation         |
 
 ---
 
