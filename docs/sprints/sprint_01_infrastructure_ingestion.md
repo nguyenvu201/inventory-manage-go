@@ -20,7 +20,7 @@
 ## [INV-SPR01-TASK-001] — Setup Infrastructure
 
 > **Task ID:** `INV-SPR01-TASK-001`  
-> **Status:** ❌ REJECTED  
+> **Status:** 👀 IN_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -52,6 +52,8 @@
 | 2026-04-12 | APPROVED       | IN_PROGRESS    | Developer    | Developer started work                                           |
 | 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | All ACs implemented: go.mod, docker-compose, migration, config, Makefile, README |
 | 2026-04-12 | IN_REVIEW      | REJECTED       | QA           | AC-01 FAIL: `pkg/` directory missing from project layout         |
+| 2026-04-12 | REJECTED       | IN_PROGRESS    | Developer    | Rework: creating `pkg/` directory per QA rejection report        |
+| 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | Fix applied: `pkg/README.md` created — all 5 layout dirs present |
 
 ### QA Rejection Report — INV-SPR01-TASK-001
 
