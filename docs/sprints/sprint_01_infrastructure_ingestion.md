@@ -203,7 +203,7 @@
 ## [INV-SPR01-TASK-004] — Raw Storage
 
 > **Task ID:** `INV-SPR01-TASK-004`  
-> **Status:** ✅ APPROVED  
+> **Status:** 👀 IN_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -212,14 +212,14 @@
 **Description:** Persist raw telemetry data to the TimescaleDB database for historical retrieval and audit purposes.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Create schema migration for `raw_telemetry` table (device_id, raw_weight, battery_level, received_at, payload_json)
-- [ ] AC-02: Set `received_at` as the TimescaleDB hypertable time-based partition key
-- [ ] AC-03: Implement repository pattern: `TelemetryRepository` interface + PostgreSQL implementation
-- [ ] AC-04: Use batch insert when more than 10 records arrive simultaneously
-- [ ] AC-05: Add an index on `device_id` to optimize historical queries
-- [ ] AC-06: Write an integration test: insert → query to verify data is stored correctly
-- [ ] AC-07: Add unique constraint on `(device_id, f_cnt)` — duplicate LoRaWAN packets received from multiple gateways are silently discarded (idempotent ingestion)
-- [ ] AC-08: Store `rssi` and `snr` fields in `raw_telemetry` for downstream signal quality reporting
+- [x] AC-01: Edit the schema migration for `raw_telemetry` table.
+- [x] AC-02: Use `create_hypertable` to turn `raw_telemetry` into a TimescaleDB hypertable partitioned by `received_at`.
+- [x] AC-03: Implement the `TelemetryRepository` pattern interface, then implement PostgreSQL specific logic.
+- [x] AC-04: Batch insert when more than 10 records arrive simultaneously or flush after interval.
+- [x] AC-05: Index on `device_id`.
+- [x] AC-06: Write an integration test using TestContainers.
+- [x] AC-07: Unique constraint `(device_id, f_cnt)` — duplicate LoRaWAN packets are silently discarded.
+- [x] AC-08: Store `rssi` and `snr` fields in `raw_telemetry` for downstream signal quality reporting.
 
 **Related Technologies:**
 - `pgx/v5` connection pool, `squirrel` query builder
@@ -235,6 +235,8 @@
 | 2026-04-12 | DRAFT          | DRAFT          | BA           | AC-07/08 added — customer PDF requirement update    |
 | 2026-04-12 | DRAFT          | PENDING_REVIEW | BA           | Submitted for Lead review                           |
 | 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-003                        |
+| 2026-04-13 | APPROVED       | IN_PROGRESS    | Developer    | Started implementation                              |
+| 2026-04-13 | IN_PROGRESS    | IN_REVIEW      | Developer    | PR Ready — ACs + integrations tests passing         |
 
 ---
 

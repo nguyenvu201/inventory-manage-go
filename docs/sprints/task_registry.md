@@ -36,7 +36,7 @@
 | INV-SPR01-TASK-001    | Setup Infrastructure                   | 🔒 CLOSED       | Developer | 2026-04-12  |
 | INV-SPR01-TASK-002    | Gateway Message Receiver               | 🔒 CLOSED       | Developer | 2026-04-13  |
 | INV-SPR01-TASK-003    | Telemetry Validator & Data Parser      | 🔒 CLOSED       | Developer | 2026-04-13  |
-| INV-SPR01-TASK-004    | Raw Storage                            | ✅ APPROVED     | —         | 2026-04-12  |
+| INV-SPR01-TASK-004    | Raw Storage                            | 👀 IN_REVIEW   | Developer | 2026-04-13  |
 
 > **Amended tasks:** TASK-003 (AC-07/08/09 added), TASK-004 (AC-07/08 added) — customer PDF Rev 2
 

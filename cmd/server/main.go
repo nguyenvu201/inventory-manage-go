@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,7 +16,10 @@ import (
 	"inventory-manage/internal/config"
 	"inventory-manage/internal/domain/telemetry"
 	inventorymqtt "inventory-manage/internal/platform/mqtt"
+	"inventory-manage/internal/repository/postgres"
 	"inventory-manage/internal/worker"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -62,10 +66,36 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to start telemetry receiver")
 	}
 
-	// Temporary: consume the channel so it doesn't block until TASK-004
+	// Setup Database Connection
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
+	
+	pgxConfig, err := pgxpool.ParseConfig(dbURL)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to parse DB connection string")
+	}
+
+	dbPool, err := pgxpool.NewWithConfig(context.Background(), pgxConfig)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to database")
+	}
+	defer dbPool.Close()
+
+	if err := dbPool.Ping(context.Background()); err != nil {
+		log.Fatal().Err(err).Msg("database ping failed")
+	}
+	log.Info().Msg("PostgreSQL connected successfully")
+
+	// Setup Repositories
+	telemetryRepo := postgres.NewTelemetryRepository(dbPool)
+
+	// Start Storage Worker
+	storageCtx, cancelStorage := context.WithCancel(context.Background())
+	storageWorker := worker.NewStorageWorker(telemetryRepo, telemetryChan)
 	go func() {
-		for payload := range telemetryChan {
-			log.Debug().Interface("payload", payload).Msg("Drained payload from channel (TASK-004 stub)")
+		log.Info().Msg("starting storage worker")
+		if err := storageWorker.Start(storageCtx); err != nil && !errors.Is(err, context.Canceled) {
+			log.Error().Err(err).Msg("storage worker exited with error")
 		}
 	}()
 
@@ -99,6 +129,8 @@ func main() {
 	log.Info().Msg("shutdown signal received")
 	
 	close(telemetryChan)
+	cancelStorage()
+	
 	mqttClient.Disconnect()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
