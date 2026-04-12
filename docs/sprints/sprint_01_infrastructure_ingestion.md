@@ -160,7 +160,7 @@
 ## [INV-SPR01-TASK-003] — Telemetry Validator & Data Parser
 
 > **Task ID:** `INV-SPR01-TASK-003`  
-> **Status:** ✅ APPROVED  
+> **Status:** 👀 IN_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -169,15 +169,15 @@
 **Description:** Build a validation and decoding layer for scale sensor payloads, ensuring only valid data enters the storage pipeline.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Define `TelemetryPayload` struct with required fields: `device_id`, `raw_weight`, `battery_level`
-- [ ] AC-02: Validate that `device_id` is non-empty, `raw_weight` is within valid range, `battery_level` is 0–100
-- [ ] AC-03: Decode Base64-encoded payloads received from ChirpStack
-- [ ] AC-04: Return a structured `ValidationError` when data fails validation
-- [ ] AC-05: Unit test coverage ≥ 80% for all validation logic (table-driven tests)
-- [ ] AC-06: Handle partial payloads (missing fields) gracefully without panicking
-- [ ] AC-07: Extend `TelemetryPayload` with LoRaWAN metadata from ChirpStack: `rssi`, `snr`, `f_cnt` (frame counter), `spreading_factor`, `sample_count`
-- [ ] AC-08: If `sample_count > 1` in payload, treat `raw_weight` as pre-averaged by the node; otherwise apply a server-side 5-reading moving average before storing
-- [ ] AC-09: Validate `f_cnt` field is present and is an unsigned integer; forward to storage layer for duplicate detection
+- [x] AC-01: Define `TelemetryPayload` struct with required fields: `device_id`, `raw_weight`, `battery_level`
+- [x] AC-02: Validate that `device_id` is non-empty, `raw_weight` is within valid range, `battery_level` is 0–100
+- [x] AC-03: Decode Base64-encoded payloads received from ChirpStack
+- [x] AC-04: Return a structured `ValidationError` when data fails validation
+- [x] AC-05: Unit test coverage ≥ 80% for all validation logic (table-driven tests)
+- [x] AC-06: Handle partial payloads (missing fields) gracefully without panicking
+- [x] AC-07: Extend `TelemetryPayload` with LoRaWAN metadata from ChirpStack: `rssi`, `snr`, `f_cnt` (frame counter), `spreading_factor`, `sample_count`
+- [x] AC-08: If `sample_count > 1` in payload, treat `raw_weight` as pre-averaged by the node; otherwise apply a server-side 5-reading moving average before storing
+- [x] AC-09: Validate `f_cnt` field is present and is an unsigned integer; forward to storage layer for duplicate detection
 
 **Related Technologies:**
 - `encoding/json`, `encoding/base64`
@@ -193,6 +193,8 @@
 | 2026-04-12 | DRAFT          | DRAFT          | BA           | AC-07/08/09 added — customer PDF requirement update |
 | 2026-04-12 | DRAFT          | PENDING_REVIEW | BA           | Submitted for Lead review                           |
 | 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-002                        |
+| 2026-04-13 | APPROVED       | IN_PROGRESS    | Developer    | Started implementation                              |
+| 2026-04-13 | IN_PROGRESS    | IN_REVIEW      | Developer    | PR #03 — all ACs implemented                        |
 
 ---
 

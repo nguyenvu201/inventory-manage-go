@@ -21,8 +21,9 @@ import (
 func TestReceiver_HandleMessage_ValidPayload(t *testing.T) {
 	// AC-04: Parse JSON payload, AC-05: Push to channel
 	processor := telemetry.NewProcessor()
+	validator := telemetry.NewValidator()
 	outChan := make(chan telemetry.TelemetryPayload, 1)
-	receiver := worker.NewTelemetryReceiver(nil, processor, outChan)
+	receiver := worker.NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	validJSON := []byte(`{
 		"deviceInfo": {"devEui": "SCALE-VALID-01"},
@@ -57,8 +58,9 @@ func TestReceiver_HandleMessage_ValidPayload(t *testing.T) {
 func TestReceiver_HandleMessage_MissingFCnt(t *testing.T) {
 	// AC-09: Validate f_cnt field
 	processor := telemetry.NewProcessor()
+	validator := telemetry.NewValidator()
 	outChan := make(chan telemetry.TelemetryPayload, 1)
-	receiver := worker.NewTelemetryReceiver(nil, processor, outChan)
+	receiver := worker.NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	invalidJSON := []byte(`{
 		"deviceInfo": {"devEui": "SCALE-INVALID"},
@@ -71,8 +73,9 @@ func TestReceiver_HandleMessage_MissingFCnt(t *testing.T) {
 
 func TestReceiver_HandleMessage_Coverage(t *testing.T) {
 	processor := telemetry.NewProcessor()
+	validator := telemetry.NewValidator()
 	outChan := make(chan telemetry.TelemetryPayload, 1)
-	receiver := worker.NewTelemetryReceiver(nil, processor, outChan)
+	receiver := worker.NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	// Missing Device ID
 	err := receiver.ProcessPayload(context.Background(), []byte(`{"deviceInfo": {"devEui": ""}}`))
@@ -81,6 +84,25 @@ func TestReceiver_HandleMessage_Coverage(t *testing.T) {
 	// Invalid JSON
 	err = receiver.ProcessPayload(context.Background(), []byte(`{invalid-json`))
 	require.Error(t, err, "should error on invalid json")
+
+	// Fallback Base64 Decoding Success
+	// Base64 for {Weight: 5000, Battery:85, SampleCount: 1} is 0x13, 0x88, 85, 1 -> "E4hVAQ=="
+	validFallbackJSON := []byte(`{
+		"deviceInfo": {"devEui": "SCALE-FALLBACK"},
+		"fCnt": 42,
+		"data": "E4hVAQ=="
+	}`)
+	err = receiver.ProcessPayload(context.Background(), validFallbackJSON)
+	require.NoError(t, err, "fallback decoding should succeed")
+
+	// Validation Failure (Negative Battery)
+	invalidBatteryJSON := []byte(`{
+		"deviceInfo": {"devEui": "SCALE-BATT"},
+		"fCnt": 42,
+		"object": {"raw_weight": 5200.5, "battery_level": -5, "sample_count": 1}
+	}`)
+	err = receiver.ProcessPayload(context.Background(), invalidBatteryJSON)
+	require.Error(t, err, "should fail domain validation")
 }
 
 func TestReceiver_Start(t *testing.T) {
@@ -92,9 +114,10 @@ func TestReceiver_Start(t *testing.T) {
 
 func TestReceiver_Timeout_Push(t *testing.T) {
 	processor := telemetry.NewProcessor()
+	validator := telemetry.NewValidator()
 	// Channel with 0 capacity will block immediately
-	outChan := make(chan telemetry.TelemetryPayload, 0)
-	receiver := worker.NewTelemetryReceiver(nil, processor, outChan)
+	outChan := make(chan telemetry.TelemetryPayload)
+	receiver := worker.NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	validJSON := []byte(`{
 		"deviceInfo": {"devEui": "SCALE-BLOCK"},

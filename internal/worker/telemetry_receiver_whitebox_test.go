@@ -25,8 +25,9 @@ func (m mockMessage) Ack() {}
 
 func TestReceiver_HandleMessage(t *testing.T) {
 	processor := telemetry.NewProcessor()
+	validator := telemetry.NewValidator()
 	outChan := make(chan telemetry.TelemetryPayload, 1)
-	receiver := NewTelemetryReceiver(nil, processor, outChan)
+	receiver := NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	validJSON := []byte(`{
 		"deviceInfo": {"devEui": "SCALE-VALID-01"},
@@ -49,8 +50,9 @@ func TestReceiver_HandleMessage(t *testing.T) {
 
 func TestReceiver_HandleMessage_ErrorLogs(t *testing.T) {
 	processor := telemetry.NewProcessor()
+	validator := telemetry.NewValidator()
 	outChan := make(chan telemetry.TelemetryPayload, 1)
-	receiver := NewTelemetryReceiver(nil, processor, outChan)
+	receiver := NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	invalidJSON := []byte(`{invalid}`)
 
@@ -63,8 +65,9 @@ func TestReceiver_HandleMessage_ErrorLogs(t *testing.T) {
 func TestReceiver_ProcessorError(t *testing.T) {
 	// Push a valid payload but timeout downstream to force an error being returned by ProcessPayload.
 	processor := telemetry.NewProcessor()
-	outChan := make(chan telemetry.TelemetryPayload, 0)
-	receiver := NewTelemetryReceiver(nil, processor, outChan)
+	validator := telemetry.NewValidator()
+	outChan := make(chan telemetry.TelemetryPayload)
+	receiver := NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	validJSON := []byte(`{
 		"deviceInfo": {"devEui": "SCALE-BLOCK"},

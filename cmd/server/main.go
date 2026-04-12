@@ -55,7 +55,8 @@ func main() {
 	// Start Telemetry Pipeline
 	telemetryChan := make(chan telemetry.TelemetryPayload, 1000)
 	processor := telemetry.NewProcessor()
-	receiver := worker.NewTelemetryReceiver(mqttClient, processor, telemetryChan)
+	validator := telemetry.NewValidator()
+	receiver := worker.NewTelemetryReceiver(mqttClient, processor, validator, telemetryChan)
 
 	if err := receiver.Start(); err != nil {
 		log.Fatal().Err(err).Msg("failed to start telemetry receiver")

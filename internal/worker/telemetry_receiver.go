@@ -19,14 +19,16 @@ import (
 type TelemetryReceiver struct {
 	client    *inventorymqtt.Client
 	processor *telemetry.Processor
+	validator *telemetry.Validator
 	outChan   chan<- telemetry.TelemetryPayload
 }
 
 // NewTelemetryReceiver constructs the gateway message receiver.
-func NewTelemetryReceiver(client *inventorymqtt.Client, processor *telemetry.Processor, outChan chan<- telemetry.TelemetryPayload) *TelemetryReceiver {
+func NewTelemetryReceiver(client *inventorymqtt.Client, processor *telemetry.Processor, validator *telemetry.Validator, outChan chan<- telemetry.TelemetryPayload) *TelemetryReceiver {
 	return &TelemetryReceiver{
 		client:    client,
 		processor: processor,
+		validator: validator,
 		outChan:   outChan,
 	}
 }
@@ -87,17 +89,39 @@ func (r *TelemetryReceiver) ProcessPayload(ctx context.Context, raw []byte) erro
 		snr = uplink.RxInfo[0].Snr
 	}
 
+	// Fallback Base64 Decoder if Object is unparsed
+	rawWeight := uplink.Object.RawWeight
+	battery := uplink.Object.BatteryLevel
+	sampleCount := uplink.Object.SampleCount
+	
+	if sampleCount == 0 && uplink.Data != "" {
+		w, b, s, decErr := telemetry.DecodeBase64Payload(uplink.Data)
+		if decErr == nil {
+			rawWeight = w
+			battery = b
+			sampleCount = s
+		} else {
+			logger.Warn().Err(decErr).Msg("failed to decode fallback base64 payload")
+		}
+	}
+
 	// AC-07: Construct TelemetryPayload
 	payload := telemetry.TelemetryPayload{
 		DeviceID:        deviceID,
-		RawWeight:       uplink.Object.RawWeight,
-		BatteryLevel:    uplink.Object.BatteryLevel,
-		SampleCount:     uplink.Object.SampleCount,
+		RawWeight:       rawWeight,
+		BatteryLevel:    battery,
+		SampleCount:     sampleCount,
 		RSSI:            rssi,
 		SNR:             snr,
 		FCnt:            *uplink.FCnt,
 		SpreadingFactor: uplink.TxInfo.Modulation.Lora.SpreadingFactor,
 		ReceivedAt:      time.Now(),
+	}
+
+	// AC-02, AC-04: Validate payload structure before moving to processor
+	if err := r.validator.Validate(payload); err != nil {
+		logger.Error().Err(err).Msg("telemetry payload validation failed")
+		return fmt.Errorf("payload validation error: %w", err)
 	}
 
 	// AC-08: Moving average processing

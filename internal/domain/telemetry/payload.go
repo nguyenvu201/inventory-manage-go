@@ -45,9 +45,9 @@ type ChirpStackUplink struct {
 
 // TelemetryPayload represents the normalized payload entering the processing pipeline.
 type TelemetryPayload struct {
-	DeviceID        string
-	RawWeight       float64
-	BatteryLevel    int8
+	DeviceID        string  `validate:"required"`
+	RawWeight       float64 `validate:"gte=0"`
+	BatteryLevel    int8    `validate:"gte=0,lte=100"`
 	RSSI            int
 	SNR             float32
 	FCnt            uint32
