@@ -9,9 +9,9 @@
 | Field           | Value                                              |
 |-----------------|----------------------------------------------------|
 | Sprint          | 2 / 5                                              |
-| Status          | 🔲 Not Started                                     |
+| Status          | 🔄 In Progress                                     |
 | Created date    | 2026-04-12                                         |
-| Owner           | —                                                  |
+| Owner           | BA                                                 |
 | Priority        | High                                               |
 | Dependencies    | Sprint 1 complete (Definition of Done met ✅)       |
 
@@ -20,7 +20,7 @@
 ## [INV-SPR02-TASK-001] — Device Registry
 
 > **Task ID:** `INV-SPR02-TASK-001`  
-> **Status:** 📝 DRAFT  
+> **Status:** 🔍 PENDING_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -45,9 +45,10 @@
 **Notes / Dependencies:** Depends on Sprint 1 being complete.
 
 **Status History:**
-| Date       | From | To    | Performed by | Notes        |
-|------------|------|-------|--------------|--------------|
-| 2026-04-12 | —    | DRAFT | BA           | Task created |
+| Date       | From      | To             | Performed by | Notes                        |
+|------------|-----------|----------------|--------------|------------------------------|
+| 2026-04-12 | —         | DRAFT          | BA           | Task created                 |
+| 2026-04-13 | DRAFT     | PENDING_REVIEW | BA           | Submitted for Lead approval  |
 
 ---
 

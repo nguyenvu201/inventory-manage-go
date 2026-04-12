@@ -36,11 +36,11 @@
 | INV-SPR01-TASK-001    | Setup Infrastructure                   | 🔒 CLOSED       | Developer | 2026-04-12  |
 | INV-SPR01-TASK-002    | Gateway Message Receiver               | 🔒 CLOSED       | Developer | 2026-04-13  |
 | INV-SPR01-TASK-003    | Telemetry Validator & Data Parser      | 🔒 CLOSED       | Developer | 2026-04-13  |
-| INV-SPR01-TASK-004    | Raw Storage                            | 🏆 VERIFIED     | Developer | 2026-04-13  |
+| INV-SPR01-TASK-004    | Raw Storage                            | 🔒 CLOSED       | Developer | 2026-04-13  |
 
 > **Amended tasks:** TASK-003 (AC-07/08/09 added), TASK-004 (AC-07/08 added) — customer PDF Rev 2
 
-**Sprint 1 Status:** 🔄 In Progress | Tasks: 4 total / 3 done | TASK-004 active
+**Sprint 1 Status:** ✅ Complete | Tasks: 4 total / 4 done | All tasks closed
 
 ---
 
@@ -48,7 +48,7 @@
 
 | Task ID               | Task Name                              | Status     | Assignee | Updated     |
 |-----------------------|----------------------------------------|------------|----------|-------------|
-| INV-SPR02-TASK-001    | Device Registry                        | 📝 DRAFT   | —        | 2026-04-12  |
+| INV-SPR02-TASK-001    | Device Registry                        | 🔍 PENDING_REVIEW | — | 2026-04-13  |
 | INV-SPR02-TASK-002    | Calibration Manager                    | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR02-TASK-003    | Calibration Workflow                   | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR02-TASK-004    | Audit Trail                            | 📝 DRAFT   | —        | 2026-04-12  |
@@ -114,7 +114,7 @@
 
 | Sprint   | Total | DRAFT | IN_PROGRESS | VERIFIED | CLOSED |
 |----------|-------|-------|-------------|----------|--------|
-| Sprint 1 | 4     | 1     | 0           | 0        | 3      |
+| Sprint 1 | 4     | 0     | 0           | 0        | 4      |
 | Sprint 2 | 4     | 4     | 0           | 0        | 0      |
 | Sprint 3 | 7     | 7     | 0           | 0        | 0      |
 | Sprint 4 | 6     | 6     | 0           | 0        | 0      |
@@ -129,6 +129,7 @@
 |-----|------------|------------|------------------------------------------------------------------|
 | 1   | 2026-04-12 | BA         | Initial registry — 20 tasks across 5 sprints                     |
 | 2   | 2026-04-12 | BA         | +6 new tasks, +5 amended tasks based on customer PDF requirement |
+| 3   | 2026-04-13 | BA         | Sprint 1 Closed. Sprint 2 Started.                               |
 
 ---
 
