@@ -89,3 +89,23 @@ func TestReceiver_Start(t *testing.T) {
 	// running Start without proper mocking will fail. Let's skip if we don't have a mocked interface.
 	// We've met the core business logic coverage criteria mostly via ProcessPayload.
 }
+
+func TestReceiver_Timeout_Push(t *testing.T) {
+	processor := telemetry.NewProcessor()
+	// Channel with 0 capacity will block immediately
+	outChan := make(chan telemetry.TelemetryPayload, 0)
+	receiver := worker.NewTelemetryReceiver(nil, processor, outChan)
+
+	validJSON := []byte(`{
+		"deviceInfo": {"devEui": "SCALE-BLOCK"},
+		"fCnt": 42,
+		"object": {"raw_weight": 5200.5, "battery_level": 85, "sample_count": 1}
+	}`)
+
+	// Cancel context immediately
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := receiver.ProcessPayload(ctx, validJSON)
+	require.Error(t, err, "should error due to timeout pushing to downstream channel")
+}

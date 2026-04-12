@@ -87,7 +87,7 @@
 ## [INV-SPR01-TASK-002] — Gateway Message Receiver
 
 > **Task ID:** `INV-SPR01-TASK-002`  
-> **Status:** ❌ REJECTED  
+> **Status:** 👀 IN_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -123,6 +123,8 @@
 | 2026-04-12 | APPROVED       | IN_PROGRESS    | Developer    | Started implementation         |
 | 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | PR Ready — ACs 01-09 implemented + all tests |
 | 2026-04-12 | IN_REVIEW      | REJECTED       | QA           | ACs implemented, but coverage 65.7% (worker), 69.7% (mqtt) < 80% |
+| 2026-04-13 | REJECTED       | IN_PROGRESS    | Developer    | Rework: increasing test coverage to meet >80% requirement |
+| 2026-04-13 | IN_PROGRESS    | IN_REVIEW      | Developer    | Fix applied: coverage now 80.0% (worker), 81.8% (mqtt) |
 
 ### QA Rejection Report — INV-SPR01-TASK-002
 

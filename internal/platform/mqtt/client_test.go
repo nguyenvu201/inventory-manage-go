@@ -12,6 +12,7 @@ import (
 
 	inventorymqtt "inventory-manage/internal/platform/mqtt"
 
+	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,5 +45,36 @@ func TestClient_Connect_Disconnect(t *testing.T) {
 	err = client.Connect(ctx)
 	require.NoError(t, err, "AC-01: Must connect successfully to local broker")
 
+	client.Disconnect()
+}
+
+func TestClient_Subscribe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping live MQTT connect test in short mode")
+	}
+
+	client, err := inventorymqtt.NewClient(
+		"localhost", 1883, "test-sub-client", "", "",
+	)
+	require.NoError(t, err)
+	defer client.Disconnect()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
+	require.NoError(t, err)
+
+	err = client.Subscribe("test/topic", 1, func(c paho.Client, m paho.Message) {})
+	require.NoError(t, err, "AC-01: Must subscribe successfully")
+}
+
+func TestClient_Disconnect_Unconnected(t *testing.T) {
+	client, err := inventorymqtt.NewClient(
+		"localhost", 1883, "test-disc-client", "", "",
+	)
+	require.NoError(t, err)
+	
+	// Should not panic or error if disconnected without connecting
 	client.Disconnect()
 }
