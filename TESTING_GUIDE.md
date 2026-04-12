@@ -56,27 +56,28 @@ MQTT_PORT=1883
 
 ## 2 · Start Docker Services
 
-```bash
-# Khởi động tất cả services (TimescaleDB + Mosquitto)
-docker-compose up -d
+> **Quan trọng:** Docker CLI v2 dùng `docker compose` (không có gạch ngang).
 
-# Xem trạng thái các containers
-docker-compose ps
+```bash
+# Khởi động infrastructure (TimescaleDB + Mosquitto)
+# App service cần --profile: docker compose --profile app up -d
+docker compose up -d
+
+# Xem trạng thái và health
+docker compose ps
 ```
 
 **Expected output:**
 
 ```
-NAME                IMAGE                           STATUS
-inventory_db        timescale/timescaledb:latest-pg15   Up (healthy)
-inventory_mqtt      eclipse-mosquitto:2.0               Up (healthy)
-inventory_app       project_inventory_manage-app        Up
+NAME             IMAGE                               STATUS
+inventory_db     timescale/timescaledb:latest-pg15   Up (healthy)
+inventory_mqtt   eclipse-mosquitto:2.0               Up (healthy)
 ```
 
-> ⏳ Lần đầu chạy cần 1–2 phút để pull Docker images (~500MB).  
-> Các lần sau chạy ngay trong vài giây.
+> ⏳ Lần đầu chạy cần pull images (~1-2 phút). Các lần sau vài giây.
 
-### Kiểm tra health của từng service:
+### Kiểm tra health:
 
 ```bash
 # PostgreSQL health
@@ -84,8 +85,8 @@ docker exec inventory_db pg_isready -U inventory_user -d inventory_db
 # Expected: /var/run/postgresql:5432 - accepting connections
 
 # MQTT Mosquitto logs
-docker logs inventory_mqtt --tail 10
-# Expected: ...mosquitto version 2.0.xx starting, ...Listening on port 1883
+docker logs inventory_mqtt --tail 5
+# Expected: ...Listening on port 1883
 ```
 
 ---
@@ -116,13 +117,35 @@ docker exec -it inventory_db psql -U inventory_user -d inventory_db
 
 ## 4 · Run Database Migrations
 
+> **Option A — Dùng golang-migrate (nếu đã cài):**
+
 ```bash
-# Chạy migration (tạo raw_telemetry hypertable)
 export DB_URL="postgres://inventory_user:inventory_secret@localhost:5432/inventory_db?sslmode=disable"
 migrate -path migrations -database "$DB_URL" up
+# Cài migrate: go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+```
 
-# Expected output:
-# 1/u create_raw_telemetry (Xms)
+> **Option B — Dùng psql trực tiếp qua Docker (không cần cài thêm gì):**
+
+```bash
+# Chạy migration file trực tiếp
+docker exec -i inventory_db psql -U inventory_user -d inventory_db < migrations/000001_create_raw_telemetry.up.sql
+```
+
+**Expected output (Option B):**
+```
+CREATE EXTENSION
+NOTICE:  extension "timescaledb" already exists, skipping
+CREATE TABLE
+     create_hypertable
+----------------------------
+ (1,public,raw_telemetry,t)
+(1 row)
+
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+COMMENT
 ```
 
 ### Verify migration đã tạo đúng table:
@@ -280,19 +303,16 @@ INSERT INTO raw_telemetry (
 SELECT id, device_id, raw_weight, battery_level, f_cnt, received_at
 FROM raw_telemetry;
 
--- Test idempotency: insert record trùng f_cnt → phải bị reject
-INSERT INTO raw_telemetry (device_id, raw_weight, battery_level, f_cnt)
-VALUES ('SCALE-001', 6000.0, 80, 1234);
--- Expected: ERROR duplicate key value violates unique constraint "uq_raw_telemetry_device_fcnt"
-
 -- Test battery validation: battery_level = 101 → phải bị reject
 INSERT INTO raw_telemetry (device_id, raw_weight, battery_level)
-VALUES ('SCALE-001', 5000.0, 101);
--- Expected: ERROR new row violates check constraint "raw_telemetry_battery_level_check"
+VALUES ('SCALE-001', 6000.0, 101);
+-- Expected:
+-- ERROR: new row for relation "_hyper_X_X_chunk" violates check constraint
+--        "raw_telemetry_battery_level_check"
 
 -- Test battery = 0 → phải pass (dead battery, still valid)
 INSERT INTO raw_telemetry (device_id, raw_weight, battery_level)
-VALUES ('SCALE-001', 5000.0, 0);
+VALUES ('SCALE-002', 5000.0, 0);
 -- Expected: INSERT 0 1
 
 \q

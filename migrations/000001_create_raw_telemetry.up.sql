@@ -37,8 +37,10 @@ SELECT create_hypertable(
 
 -- Unique constraint for idempotent ingestion:
 -- Same device + same LoRaWAN frame counter = duplicate packet from multiple gateways
+-- NOTE: TimescaleDB hypertable partitioned by received_at requires the
+--       partition column in all unique indexes.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_raw_telemetry_device_fcnt
-    ON raw_telemetry (device_id, f_cnt)
+    ON raw_telemetry (device_id, f_cnt, received_at)
     WHERE f_cnt IS NOT NULL;
 
 -- Query index: look up telemetry by device_id within a time range

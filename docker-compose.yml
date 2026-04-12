@@ -1,4 +1,7 @@
-version: "3.8"
+# docker-compose.yml — Inventory Management System
+# Usage:
+#   Infrastructure only (DB + MQTT): docker compose up -d
+#   With Go app:                      docker compose --profile app up -d
 
 services:
   # ── PostgreSQL + TimescaleDB ────────────────────────────────────────────────
@@ -44,6 +47,7 @@ services:
 
   # ── Golang Service ──────────────────────────────────────────────────────────
   app:
+    profiles: ["app"]          # Only started with: docker compose --profile app up
     build:
       context: .
       dockerfile: Dockerfile
