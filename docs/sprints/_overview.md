@@ -41,7 +41,7 @@
 
 | Sprint | Total Tasks | Completed | Status            | Notes                          |
 |--------|-------------|-----------|-------------------|--------------------------------|
-| 1      | 4           | 0         | 🔲 Not Started     | 2 tasks amended (PDF Rev 2)    |
+| 1      | 4           | 0         | 🔄 In Progress     | TASK-001 active (IN_PROGRESS)  |
 | 2      | 4           | 0         | 🔲 Not Started     | —                              |
 | 3      | 7           | 0         | 🔲 Not Started     | +3 new tasks (PDF Rev 2)       |
 | 4      | 6           | 0         | 🔲 Not Started     | +2 new UI tasks (PDF Rev 2)    |

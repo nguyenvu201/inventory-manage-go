@@ -31,16 +31,16 @@
 
 ## Sprint 1 — Infrastructure & Data Ingestion
 
-| Task ID               | Task Name                              | Status     | Assignee | Updated     |
-|-----------------------|----------------------------------------|------------|----------|-------------|
-| INV-SPR01-TASK-001    | Setup Infrastructure                   | 📝 DRAFT   | —        | 2026-04-12  |
-| INV-SPR01-TASK-002    | Gateway Message Receiver               | 📝 DRAFT   | —        | 2026-04-12  |
-| INV-SPR01-TASK-003    | Telemetry Validator & Data Parser      | 📝 DRAFT   | —        | 2026-04-12  |
-| INV-SPR01-TASK-004    | Raw Storage                            | 📝 DRAFT   | —        | 2026-04-12  |
+| Task ID               | Task Name                              | Status          | Assignee  | Updated     |
+|-----------------------|----------------------------------------|-----------------|-----------|-------------|
+| INV-SPR01-TASK-001    | Setup Infrastructure                   | 👀 IN_REVIEW    | Developer | 2026-04-12  |
+| INV-SPR01-TASK-002    | Gateway Message Receiver               | ✅ APPROVED     | —         | 2026-04-12  |
+| INV-SPR01-TASK-003    | Telemetry Validator & Data Parser      | ✅ APPROVED     | —         | 2026-04-12  |
+| INV-SPR01-TASK-004    | Raw Storage                            | ✅ APPROVED     | —         | 2026-04-12  |
 
 > **Amended tasks:** TASK-003 (AC-07/08/09 added), TASK-004 (AC-07/08 added) — customer PDF Rev 2
 
-**Sprint 1 Status:** 🔲 Not Started | Tasks: 4 total / 0 done
+**Sprint 1 Status:** 🔄 In Progress | Tasks: 4 total / 0 done | TASK-001 active
 
 ---
 

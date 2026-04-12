@@ -9,7 +9,7 @@
 | Field           | Value                                              |
 |-----------------|----------------------------------------------------|
 | Sprint          | 1 / 5                                              |
-| Status          | 🔲 Not Started                                     |
+| Status          | 🔄 In Progress                                     |
 | Created date    | 2026-04-12                                         |
 | Owner           | —                                                  |
 | Priority        | High                                               |
@@ -20,21 +20,21 @@
 ## [INV-SPR01-TASK-001] — Setup Infrastructure
 
 > **Task ID:** `INV-SPR01-TASK-001`  
-> **Status:** 📝 DRAFT  
+> **Status:** 👀 IN_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 1  
 
 **Description:** Initialize the full technical foundation for the Golang project, including project structure, Docker services, and environment configuration.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Initialize Golang module (`go mod init`) following standard project layout (`cmd/`, `internal/`, `pkg/`, `config/`)
-- [ ] AC-02: Write `docker-compose.yml` including services: `postgresql`, `timescaledb`, `mosquitto` (MQTT broker)
-- [ ] AC-03: Configure TimescaleDB extension and create hypertable for the `telemetry_records` table
-- [ ] AC-04: Create `config/config.go` that reads all configuration from environment variables (`.env`)
-- [ ] AC-05: Write a Makefile with commands: `make run`, `make build`, `make migrate`, `make test`
-- [ ] AC-06: Update `README.md` with complete environment setup and startup instructions
+- [x] AC-01: Initialize Golang module (`go mod init`) following standard project layout (`cmd/`, `internal/`, `pkg/`, `config/`)
+- [x] AC-02: Write `docker-compose.yml` including services: `postgresql`, `timescaledb`, `mosquitto` (MQTT broker)
+- [x] AC-03: Configure TimescaleDB extension and create hypertable for the `telemetry_records` table
+- [x] AC-04: Create `config/config.go` that reads all configuration from environment variables (`.env`)
+- [x] AC-05: Write a Makefile with commands: `make run`, `make build`, `make migrate`, `make test`
+- [x] AC-06: Update `README.md` with complete environment setup and startup instructions
 
 **Related Technologies:**
 - Golang 1.22+, Docker Compose v3.8
@@ -44,16 +44,20 @@
 **Notes / Dependencies:** No dependencies — this is the first task.
 
 **Status History:**
-| Date       | From | To    | Performed by | Notes        |
-|------------|------|-------|--------------|--------------|
-| 2026-04-12 | —    | DRAFT | BA           | Task created |
+| Date       | From           | To             | Performed by | Notes                                                            |
+|------------|----------------|----------------|--------------|------------------------------------------------------------------|
+| 2026-04-12 | —              | DRAFT          | BA           | Task created                                                     |
+| 2026-04-12 | DRAFT          | PENDING_REVIEW | BA           | Submitted for Lead review                                        |
+| 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — ready for sprint                                      |
+| 2026-04-12 | APPROVED       | IN_PROGRESS    | Developer    | Developer started work                                           |
+| 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | All ACs implemented: go.mod, docker-compose, migration, config, Makefile, README |
 
 ---
 
 ## [INV-SPR01-TASK-002] — Gateway Message Receiver
 
 > **Task ID:** `INV-SPR01-TASK-002`  
-> **Status:** 📝 DRAFT  
+> **Status:** ✅ APPROVED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -68,25 +72,31 @@
 - [ ] AC-04: Parse JSON payload from ChirpStack uplink frame into an internal struct
 - [ ] AC-05: Push valid messages into a buffered internal channel for downstream processing
 - [ ] AC-06: Log every received message including `device_id` and `trace_id`
+- [ ] AC-07: Extend `TelemetryPayload` with LoRaWAN metadata from ChirpStack: `rssi`, `snr`, `f_cnt` (frame counter), `spreading_factor`, `sample_count`
+- [ ] AC-08: If `sample_count > 1` in payload, treat `raw_weight` as pre-averaged by the node; otherwise apply a server-side 5-reading moving average before storing
+- [ ] AC-09: Validate `f_cnt` field is present and is an unsigned integer; forward to storage layer for duplicate detection
 
 **Related Technologies:**
 - `eclipse/paho.mqtt.golang`
 - ChirpStack v4 Application Server API / Payload format
 - Pattern: pub/sub with buffered channel
 
-**Notes / Dependencies:** Depends on `INV-SPR01-TASK-001` (requires Docker + MQTT broker)
+**Notes / Dependencies:** Depends on `INV-SPR01-TASK-001` (requires Docker + MQTT broker) — ⛔ awaiting TASK-001 completion
 
 **Status History:**
-| Date       | From | To    | Performed by | Notes        |
-|------------|------|-------|--------------|--------------|
-| 2026-04-12 | —    | DRAFT | BA           | Task created |
+| Date       | From           | To             | Performed by | Notes                          |
+|------------|----------------|----------------|--------------|--------------------------------|
+| 2026-04-12 | —              | DRAFT          | BA           | Task created                   |
+| 2026-04-12 | DRAFT          | DRAFT          | BA           | AC-07/08/09 added — customer PDF requirement update |
+| 2026-04-12 | DRAFT          | PENDING_REVIEW | BA           | Submitted for Lead review      |
+| 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-001   |
 
 ---
 
 ## [INV-SPR01-TASK-003] — Telemetry Validator & Data Parser
 
 > **Task ID:** `INV-SPR01-TASK-003`  
-> **Status:** 📝 DRAFT  
+> **Status:** ✅ APPROVED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -110,20 +120,22 @@
 - `go-playground/validator/v10`
 - Testing: `testify/assert`, table-driven tests
 
-**Notes / Dependencies:** Depends on `INV-SPR01-TASK-002` (requires payload format from Receiver)
+**Notes / Dependencies:** Depends on `INV-SPR01-TASK-002` (requires payload format from Receiver) — ⛔ awaiting TASK-002 completion
 
 **Status History:**
-| Date       | From | To    | Performed by | Notes                                               |
-|------------|------|-------|--------------|-----------------------------------------------------|
-| 2026-04-12 | —    | DRAFT | BA           | Task created                                        |
-| 2026-04-12 | DRAFT| DRAFT | BA           | AC-07/08/09 added — customer PDF requirement update |
+| Date       | From           | To             | Performed by | Notes                                               |
+|------------|----------------|----------------|--------------|-----------------------------------------------------|
+| 2026-04-12 | —              | DRAFT          | BA           | Task created                                        |
+| 2026-04-12 | DRAFT          | DRAFT          | BA           | AC-07/08/09 added — customer PDF requirement update |
+| 2026-04-12 | DRAFT          | PENDING_REVIEW | BA           | Submitted for Lead review                           |
+| 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-002                        |
 
 ---
 
 ## [INV-SPR01-TASK-004] — Raw Storage
 
 > **Task ID:** `INV-SPR01-TASK-004`  
-> **Status:** 📝 DRAFT  
+> **Status:** ✅ APPROVED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -146,13 +158,15 @@
 - TimescaleDB `create_hypertable()`
 - Migration tool: `golang-migrate/migrate`
 
-**Notes / Dependencies:** Depends on `INV-SPR01-TASK-003` (only validated payloads are stored)
+**Notes / Dependencies:** Depends on `INV-SPR01-TASK-003` (only validated payloads are stored) — ⛔ awaiting TASK-003 completion
 
 **Status History:**
-| Date       | From | To    | Performed by | Notes                                               |
-|------------|------|-------|--------------|-----------------------------------------------------|
-| 2026-04-12 | —    | DRAFT | BA           | Task created                                        |
-| 2026-04-12 | DRAFT| DRAFT | BA           | AC-07/08 added — customer PDF requirement update    |
+| Date       | From           | To             | Performed by | Notes                                               |
+|------------|----------------|----------------|--------------|-----------------------------------------------------|
+| 2026-04-12 | —              | DRAFT          | BA           | Task created                                        |
+| 2026-04-12 | DRAFT          | DRAFT          | BA           | AC-07/08 added — customer PDF requirement update    |
+| 2026-04-12 | DRAFT          | PENDING_REVIEW | BA           | Submitted for Lead review                           |
+| 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-003                        |
 
 ---
 

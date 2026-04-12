@@ -1,0 +1,18 @@
+# Binaries
+bin/
+*.exe
+
+# Environment — NEVER commit real .env
+.env
+
+# Test artifacts
+coverage.out
+coverage.html
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Go build cache
+vendor/
