@@ -107,6 +107,10 @@ func main() {
 	deviceUseCase := usecase.NewDeviceUseCase(deviceRepo)
 	deviceHandler := handler.NewDeviceHandler(deviceUseCase)
 
+	calibRepo := postgres.NewCalibrationRepository(dbPool)
+	calibUseCase := usecase.NewCalibrationUseCase(calibRepo)
+	calibHandler := handler.NewCalibrationHandler(calibUseCase)
+
 	// Setup HTTP Server with chi
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
@@ -121,6 +125,7 @@ func main() {
 
 	router.Route("/api/v1", func(r chi.Router) {
 		deviceHandler.RegisterRoutes(r)
+		calibHandler.RegisterRoutes(r)
 	})
 
 	srv := &http.Server{

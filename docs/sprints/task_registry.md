@@ -49,7 +49,7 @@
 | Task ID               | Task Name                              | Status     | Assignee | Updated     |
 |-----------------------|----------------------------------------|------------|----------|-------------|
 | INV-SPR02-TASK-001    | Device Registry                        | 🔒 CLOSED      | Developer | 2026-04-13  |
-| INV-SPR02-TASK-002    | Calibration Manager                    | 🔍 PENDING_REVIEW| —        | 2026-04-13  |
+| INV-SPR02-TASK-002    | Calibration Manager                    | 🏆 VERIFIED   | Developer| 2026-04-13  |
 | INV-SPR02-TASK-003    | Calibration Workflow                   | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR02-TASK-004    | Audit Trail                            | 📝 DRAFT   | —        | 2026-04-12  |
 

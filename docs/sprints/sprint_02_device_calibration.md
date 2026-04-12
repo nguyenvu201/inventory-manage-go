@@ -85,21 +85,21 @@
 ## [INV-SPR02-TASK-002] — Calibration Manager
 
 > **Task ID:** `INV-SPR02-TASK-002`  
-> **Status:** 🔍 PENDING_REVIEW  
+> **Status:** 🏆 VERIFIED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 2  
 
 **Description:** Build logic to store and retrieve calibration parameters (Zero/Span) and hardware configuration for each scale type.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Create schema migration for `calibration_configs` table with: `id`, `device_id` (FK), `zero_value`, `span_value`, `unit`, `capacity_max`, `hardware_config (jsonb)`, `effective_from`, `created_by`
-- [ ] AC-02: Implement `POST /api/v1/devices/:id/calibration` — create a new calibration config
-- [ ] AC-03: Implement `GET /api/v1/devices/:id/calibration/active` — return the currently active configuration
-- [ ] AC-04: Store `hardware_config` as flexible JSONB (ADC bits, sampling rate, filter type)
-- [ ] AC-05: Automatically deactivate the old record (set `deactivated_at`) when a new record is created
-- [ ] AC-06: Enforce only one active calibration record per device at any time using a partial unique index
+- [x] AC-01: Create schema migration for `calibration_configs` table with: `id`, `device_id` (FK), `zero_value`, `span_value`, `unit`, `capacity_max`, `hardware_config (jsonb)`, `effective_from`, `created_by`
+- [x] AC-02: Implement `POST /api/v1/devices/:id/calibration` — create a new calibration config
+- [x] AC-03: Implement `GET /api/v1/devices/:id/calibration/active` — return the currently active configuration
+- [x] AC-04: Store `hardware_config` as flexible JSONB (ADC bits, sampling rate, filter type)
+- [x] AC-05: Automatically deactivate the old record (set `deactivated_at`) when a new record is created
+- [x] AC-06: Enforce only one active calibration record per device at any time using a partial unique index
 
 **Related Technologies:**
 - PostgreSQL JSONB, partial unique index
@@ -112,6 +112,10 @@
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
 | 2026-04-13 | DRAFT | PENDING_REVIEW | BA | Trình QA/Lead review thiết kế schema DB |
+| 2026-04-13 | PENDING_REVIEW | APPROVED | Lead | Implementation plan approved |
+| 2026-04-13 | APPROVED | IN_PROGRESS | Developer | Started implementation |
+| 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer | Hoàn thành implementation và tests |
+| 2026-04-13 | IN_REVIEW | VERIFIED | QA | All ACs verified. Coverage >= 80%. All gates pass. |
 
 ---
 
