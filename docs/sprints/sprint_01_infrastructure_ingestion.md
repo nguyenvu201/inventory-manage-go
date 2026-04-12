@@ -87,7 +87,7 @@
 ## [INV-SPR01-TASK-002] — Gateway Message Receiver
 
 > **Task ID:** `INV-SPR01-TASK-002`  
-> **Status:** 🔄 IN_PROGRESS  
+> **Status:** 👀 IN_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -96,15 +96,15 @@
 **Description:** Develop a service to receive telemetry messages from the Gateway via MQTT/ChirpStack, handle reconnection, and feed messages into the processing pipeline.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Connect to MQTT broker using `paho.mqtt.golang` with config injected via environment variables
-- [ ] AC-02: Subscribe to topic pattern `application/+/device/+/event/up`
-- [ ] AC-03: Implement automatic reconnect logic with exponential backoff on broker disconnection
-- [ ] AC-04: Parse JSON payload from ChirpStack uplink frame into an internal struct
-- [ ] AC-05: Push valid messages into a buffered internal channel for downstream processing
-- [ ] AC-06: Log every received message including `device_id` and `trace_id`
-- [ ] AC-07: Extend `TelemetryPayload` with LoRaWAN metadata from ChirpStack: `rssi`, `snr`, `f_cnt` (frame counter), `spreading_factor`, `sample_count`
-- [ ] AC-08: If `sample_count > 1` in payload, treat `raw_weight` as pre-averaged by the node; otherwise apply a server-side 5-reading moving average before storing
-- [ ] AC-09: Validate `f_cnt` field is present and is an unsigned integer; forward to storage layer for duplicate detection
+- [x] AC-01: Connect to MQTT broker using `paho.mqtt.golang` with config injected via environment variables
+- [x] AC-02: Subscribe to topic pattern `application/+/device/+/event/up`
+- [x] AC-03: Implement automatic reconnect logic with exponential backoff on broker disconnection
+- [x] AC-04: Parse JSON payload from ChirpStack uplink frame into an internal struct
+- [x] AC-05: Push valid messages into a buffered internal channel for downstream processing
+- [x] AC-06: Log every received message including `device_id` and `trace_id`
+- [x] AC-07: Extend `TelemetryPayload` with LoRaWAN metadata from ChirpStack: `rssi`, `snr`, `f_cnt` (frame counter), `spreading_factor`, `sample_count`
+- [x] AC-08: If `sample_count > 1` in payload, treat `raw_weight` as pre-averaged by the node; otherwise apply a server-side 5-reading moving average before storing
+- [x] AC-09: Validate `f_cnt` field is present and is an unsigned integer; forward to storage layer for duplicate detection
 
 **Related Technologies:**
 - `eclipse/paho.mqtt.golang`
@@ -121,6 +121,7 @@
 | 2026-04-12 | DRAFT          | PENDING_REVIEW | BA           | Submitted for Lead review      |
 | 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-001   |
 | 2026-04-12 | APPROVED       | IN_PROGRESS    | Developer    | Started implementation         |
+| 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | PR Ready — ACs 01-09 implemented + all tests |
 
 ---
 

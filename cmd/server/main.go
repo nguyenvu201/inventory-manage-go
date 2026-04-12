@@ -13,6 +13,9 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"inventory-manage/internal/config"
+	"inventory-manage/internal/domain/telemetry"
+	inventorymqtt "inventory-manage/internal/platform/mqtt"
+	"inventory-manage/internal/worker"
 )
 
 func main() {
@@ -34,7 +37,38 @@ func main() {
 		Str("addr", cfg.ListenAddr).
 		Msg("inventory-manage service starting")
 
-	// TODO: wire up router, DB pool, MQTT worker in later tasks
+	// Setup MQTT Client
+	mqttClient, err := inventorymqtt.NewClient(
+		cfg.MQTTBroker, cfg.MQTTPort, cfg.MQTTClientID, cfg.MQTTUsername, cfg.MQTTPassword,
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to initialize MQTT client")
+	}
+
+	startupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := mqttClient.Connect(startupCtx); err != nil {
+		log.Error().Err(err).Msg("MQTT broker unavailable at startup, will rely on auto-reconnect")
+	}
+
+	// Start Telemetry Pipeline
+	telemetryChan := make(chan telemetry.TelemetryPayload, 1000)
+	processor := telemetry.NewProcessor()
+	receiver := worker.NewTelemetryReceiver(mqttClient, processor, telemetryChan)
+
+	if err := receiver.Start(); err != nil {
+		log.Fatal().Err(err).Msg("failed to start telemetry receiver")
+	}
+
+	// Temporary: consume the channel so it doesn't block until TASK-004
+	go func() {
+		for payload := range telemetryChan {
+			log.Debug().Interface("payload", payload).Msg("Drained payload from channel (TASK-004 stub)")
+		}
+	}()
+
+	// Setup HTTP Server
 	router := http.NewServeMux()
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -62,6 +96,9 @@ func main() {
 
 	<-quit
 	log.Info().Msg("shutdown signal received")
+	
+	close(telemetryChan)
+	mqttClient.Disconnect()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

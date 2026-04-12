@@ -1,3 +1,7 @@
+---
+description: golang-developer 
+---
+
 # /golang-developer — Developer Task Implementation Workflow
 
 Use this workflow when you are assigned a task (`🔄 IN_PROGRESS`) and need to implement it following FDA 21 CFR Part 11 / IEC 62304 standards.
