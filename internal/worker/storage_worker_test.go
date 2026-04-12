@@ -2,6 +2,7 @@ package worker_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 // mockRepo simulates db
 type mockRepo struct {
+	mu             sync.Mutex
 	saveCount      int
 	saveBatchCount int
 	recordsSaved   int
@@ -21,14 +23,24 @@ type mockRepo struct {
 }
 
 func (m *mockRepo) Save(ctx context.Context, record *telemetry.RawTelemetry) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.saveCount++
 	return m.errResponse
 }
 
 func (m *mockRepo) SaveBatch(ctx context.Context, records []*telemetry.RawTelemetry) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.saveBatchCount++
 	m.recordsSaved += len(records)
 	return m.errResponse
+}
+
+func (m *mockRepo) getStats() (int, int, int) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.saveCount, m.saveBatchCount, m.recordsSaved
 }
 
 func (m *mockRepo) FindByDeviceID(ctx context.Context, q telemetry.TelemetryQuery) ([]*telemetry.RawTelemetry, error) {
@@ -62,8 +74,9 @@ func TestStorageWorker_FlushOnBatchSize(t *testing.T) {
 	// Give worker time to process and flush
 	time.Sleep(100 * time.Millisecond)
 
-	assert.Equal(t, 1, repo.saveBatchCount, "Expected exactly 1 batch flush after 10 records")
-	assert.Equal(t, 10, repo.recordsSaved, "Expected exactly 10 records saved")
+	_, batchCount, recordsSaved := repo.getStats()
+	assert.Equal(t, 1, batchCount, "Expected exactly 1 batch flush after 10 records")
+	assert.Equal(t, 10, recordsSaved, "Expected exactly 10 records saved")
 
 	// Shutdown
 	cancel()
@@ -91,15 +104,17 @@ func TestStorageWorker_FlushOnTickAndChannelClose(t *testing.T) {
 
 	// Not closing immediately. Wait briefly shouldn't flush because tick is 2s.
 	time.Sleep(100 * time.Millisecond)
-	assert.Equal(t, 0, repo.saveBatchCount, "Expected 0 flushes before closing")
+	_, batchCount, _ := repo.getStats()
+	assert.Equal(t, 0, batchCount, "Expected 0 flushes before closing")
 
 	// Close channel to trigger final flush
 	close(inChan)
 	
 	<-done // Wait for worker to finish safely
 	
-	assert.Equal(t, 1, repo.saveBatchCount, "Expected 1 flush on channel close")
-	assert.Equal(t, 5, repo.recordsSaved, "Expected 5 records saved before close")
+	_, finalBatch, finalRecords := repo.getStats()
+	assert.Equal(t, 1, finalBatch, "Expected 1 flush on channel close")
+	assert.Equal(t, 5, finalRecords, "Expected 5 records saved before close")
 }
 
 func TestStorageWorker_ContextCancellationFlush(t *testing.T) {
@@ -125,6 +140,7 @@ func TestStorageWorker_ContextCancellationFlush(t *testing.T) {
 	cancel()
 	<-done
 
-	assert.Equal(t, 1, repo.saveBatchCount)
-	assert.Equal(t, 1, repo.recordsSaved)
+	_, batchCount, recordsSaved := repo.getStats()
+	assert.Equal(t, 1, batchCount)
+	assert.Equal(t, 1, recordsSaved)
 }

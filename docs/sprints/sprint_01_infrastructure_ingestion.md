@@ -203,7 +203,7 @@
 ## [INV-SPR01-TASK-004] — Raw Storage
 
 > **Task ID:** `INV-SPR01-TASK-004`  
-> **Status:** ❌ REJECTED  
+> **Status:** 🏆 VERIFIED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -238,6 +238,9 @@
 | 2026-04-13 | APPROVED       | IN_PROGRESS    | Developer    | Started implementation                              |
 | 2026-04-13 | IN_PROGRESS    | IN_REVIEW      | Developer    | PR Ready — ACs + integrations tests passing         |
 | 2026-04-13 | IN_REVIEW      | REJECTED       | QA           | DATA RACE detected in internal/worker_test. See report|
+| 2026-04-13 | REJECTED       | IN_PROGRESS    | Developer    | Fixing data race in mockRepo                        |
+| 2026-04-13 | IN_PROGRESS    | IN_REVIEW      | Developer    | DATA RACE fixed — ready for re-review               |
+| 2026-04-13 | IN_REVIEW      | VERIFIED       | QA           | Data race resolved. All ACs verified. Quality gates pass. |
 
 ### QA Rejection Report — INV-SPR01-TASK-004
 
