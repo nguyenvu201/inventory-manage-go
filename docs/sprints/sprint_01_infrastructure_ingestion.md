@@ -87,7 +87,7 @@
 ## [INV-SPR01-TASK-002] — Gateway Message Receiver
 
 > **Task ID:** `INV-SPR01-TASK-002`  
-> **Status:** 🏆 VERIFIED  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -126,6 +126,7 @@
 | 2026-04-13 | REJECTED       | IN_PROGRESS    | Developer    | Rework: increasing test coverage to meet >80% requirement |
 | 2026-04-13 | IN_PROGRESS    | IN_REVIEW      | Developer    | Fix applied: coverage now 80.0% (worker), 81.8% (mqtt) |
 | 2026-04-13 | IN_REVIEW      | VERIFIED       | QA           | All ACs verified. All quality gates pass. Coverage requirements met. |
+| 2026-04-13 | VERIFIED       | CLOSED         | Lead         | Closed task after QA verification |
 
 ### QA Rejection Report — INV-SPR01-TASK-002
 
@@ -162,7 +163,7 @@
 > **Status:** ✅ APPROVED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 1  
 
 **Description:** Build a validation and decoding layer for scale sensor payloads, ensuring only valid data enters the storage pipeline.
