@@ -20,7 +20,7 @@
 ## [INV-SPR01-TASK-001] — Setup Infrastructure
 
 > **Task ID:** `INV-SPR01-TASK-001`  
-> **Status:** 👀 IN_REVIEW  
+> **Status:** 🏆 VERIFIED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -54,6 +54,7 @@
 | 2026-04-12 | IN_REVIEW      | REJECTED       | QA           | AC-01 FAIL: `pkg/` directory missing from project layout         |
 | 2026-04-12 | REJECTED       | IN_PROGRESS    | Developer    | Rework: creating `pkg/` directory per QA rejection report        |
 | 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | Fix applied: `pkg/README.md` created — all 5 layout dirs present |
+| 2026-04-12 | IN_REVIEW      | VERIFIED       | QA           | All 6 ACs pass. AC-01 fix confirmed. Code review clean.          |
 
 ### QA Rejection Report — INV-SPR01-TASK-001
 
