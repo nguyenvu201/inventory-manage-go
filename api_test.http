@@ -1,0 +1,47 @@
+### API Testing Definitions for Inventory Management
+
+@baseUrl = http://localhost:8080/api/v1
+
+### 1. Ktra Health Check
+GET http://localhost:8080/health
+Accept: application/json
+
+### 2. Device Registry: Tạo mới thiết bị
+POST {{baseUrl}}/devices
+Content-Type: application/json
+
+{
+  "device_id": "SCALE-001",
+  "name": "Cân Nhập Kho 01",
+  "sku_code": "SKU-500KG",
+  "status": "active"
+}
+
+### 3. Device Registry: Lấy danh sách thiết bị
+GET {{baseUrl}}/devices
+Accept: application/json
+
+### 4. Device Registry: Lấy thông tin thiết bị theo ID
+GET {{baseUrl}}/devices/SCALE-001
+Accept: application/json
+
+### 5. Calibration Manager: Tạo cấu hình Calibration mới
+POST {{baseUrl}}/devices/SCALE-001/calibration
+Content-Type: application/json
+
+{
+  "zero_value": 0.05,
+  "span_value": 500.0,
+  "unit": "kg",
+  "capacity_max": 1000.0,
+  "hardware_config": {
+    "adc_rate": 80,
+    "filter_type": "moving_average",
+    "sample_count": 10
+  },
+  "created_by": "admin"
+}
+
+### 6. Calibration Manager: Lấy cấu hình Active hiện tại
+GET {{baseUrl}}/devices/SCALE-001/calibration/active
+Accept: application/json

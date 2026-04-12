@@ -85,7 +85,7 @@
 ## [INV-SPR02-TASK-002] — Calibration Manager
 
 > **Task ID:** `INV-SPR02-TASK-002`  
-> **Status:** 🏆 VERIFIED  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -116,13 +116,14 @@
 | 2026-04-13 | APPROVED | IN_PROGRESS | Developer | Started implementation |
 | 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer | Hoàn thành implementation và tests |
 | 2026-04-13 | IN_REVIEW | VERIFIED | QA | All ACs verified. Coverage >= 80%. All gates pass. |
+| 2026-04-13 | VERIFIED | CLOSED | Lead | Approved and closed |
 
 ---
 
 ## [INV-SPR02-TASK-003] — Calibration Workflow
 
 > **Task ID:** `INV-SPR02-TASK-003`  
-> **Status:** 📝 DRAFT  
+> **Status:** 🔍 PENDING_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -148,6 +149,7 @@
 | Date       | From | To    | Performed by | Notes        |
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
+| 2026-04-13 | DRAFT| PENDING_REVIEW| BA   | Trình QA/Lead duyệt AC và luồng transaction |
 
 ---
 

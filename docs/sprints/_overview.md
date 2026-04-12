@@ -42,7 +42,7 @@
 | Sprint | Total Tasks | Completed | Status            | Notes                          |
 |--------|-------------|-----------|-------------------|--------------------------------|
 | 1      | 4           | 4         | ✅ Completed       | TASK-004 closed                |
-| 2      | 4           | 1         | 🔄 In Progress     | TASK-001 closed, TASK-002 pending |
+| 2      | 4           | 2         | 🔄 In Progress     | TASK-001 & TASK-002 closed, TASK-003 pending |
 | 3      | 7           | 0         | 🔲 Not Started     | +3 new tasks (PDF Rev 2)       |
 | 4      | 6           | 0         | 🔲 Not Started     | +2 new UI tasks (PDF Rev 2)    |
 | 5      | 5           | 0         | 🔲 Not Started     | +1 new UI task (PDF Rev 2)     |
