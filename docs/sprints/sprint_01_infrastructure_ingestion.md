@@ -87,7 +87,7 @@
 ## [INV-SPR01-TASK-002] — Gateway Message Receiver
 
 > **Task ID:** `INV-SPR01-TASK-002`  
-> **Status:** 👀 IN_REVIEW  
+> **Status:** ❌ REJECTED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -122,6 +122,34 @@
 | 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-001   |
 | 2026-04-12 | APPROVED       | IN_PROGRESS    | Developer    | Started implementation         |
 | 2026-04-12 | IN_PROGRESS    | IN_REVIEW      | Developer    | PR Ready — ACs 01-09 implemented + all tests |
+| 2026-04-12 | IN_REVIEW      | REJECTED       | QA           | ACs implemented, but coverage 65.7% (worker), 69.7% (mqtt) < 80% |
+
+### QA Rejection Report — INV-SPR01-TASK-002
+
+**Verified ACs:**
+- [x] AC-01: ✅ Connects to MQTT broker
+- [x] AC-02: ✅ Subscribes to topic pattern
+- [x] AC-03: ✅ Exponential backoff via callback
+- [x] AC-04: ✅ Parses JSON ChirpStack uplink
+- [x] AC-05: ✅ Pushes to buffered channel
+- [x] AC-06: ✅ Logs with `device_id` and `trace_id`
+- [x] AC-07: ✅ Maps LoRaWAN metadata
+- [x] AC-08: ✅ Server-side moving average
+- [x] AC-09: ✅ Validates `f_cnt`
+
+**Failed ACs:**
+- None (All functionally pass)
+
+**Quality Gates:**
+- Build: ✅ pass
+- go vet: ✅ pass
+- Tests: ✅ pass
+- Race detector: ✅ pass
+- Coverage: ❌ FAIL — `internal/worker` (65.7% < 80%), `internal/platform/mqtt` (69.7% < 80%)
+
+**Required fixes before re-review:**
+1. Increase test coverage in `internal/worker/telemetry_receiver_test.go` (e.g. mock MQTT `handleMessage` / `Start()`).
+2. Increase test coverage in `internal/platform/mqtt/client_test.go` (e.g. test `Subscribe()`).
 
 ---
 
