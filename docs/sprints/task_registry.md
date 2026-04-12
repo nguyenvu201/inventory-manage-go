@@ -35,12 +35,12 @@
 |-----------------------|----------------------------------------|-----------------|-----------|-------------|
 | INV-SPR01-TASK-001    | Setup Infrastructure                   | 🔒 CLOSED       | Developer | 2026-04-12  |
 | INV-SPR01-TASK-002    | Gateway Message Receiver               | 🔒 CLOSED       | Developer | 2026-04-13  |
-| INV-SPR01-TASK-003    | Telemetry Validator & Data Parser      | 🏆 VERIFIED     | Developer | 2026-04-13  |
+| INV-SPR01-TASK-003    | Telemetry Validator & Data Parser      | 🔒 CLOSED       | Developer | 2026-04-13  |
 | INV-SPR01-TASK-004    | Raw Storage                            | ✅ APPROVED     | —         | 2026-04-12  |
 
 > **Amended tasks:** TASK-003 (AC-07/08/09 added), TASK-004 (AC-07/08 added) — customer PDF Rev 2
 
-**Sprint 1 Status:** 🔄 In Progress | Tasks: 4 total / 2 done | TASK-003 up next
+**Sprint 1 Status:** 🔄 In Progress | Tasks: 4 total / 3 done | TASK-004 active
 
 ---
 
@@ -114,7 +114,7 @@
 
 | Sprint   | Total | DRAFT | IN_PROGRESS | VERIFIED | CLOSED |
 |----------|-------|-------|-------------|----------|--------|
-| Sprint 1 | 4     | 2     | 0           | 0        | 2      |
+| Sprint 1 | 4     | 1     | 0           | 0        | 3      |
 | Sprint 2 | 4     | 4     | 0           | 0        | 0      |
 | Sprint 3 | 7     | 7     | 0           | 0        | 0      |
 | Sprint 4 | 6     | 6     | 0           | 0        | 0      |
