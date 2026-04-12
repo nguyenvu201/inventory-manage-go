@@ -203,7 +203,7 @@
 ## [INV-SPR01-TASK-004] — Raw Storage
 
 > **Task ID:** `INV-SPR01-TASK-004`  
-> **Status:** 👀 IN_REVIEW  
+> **Status:** ❌ REJECTED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -237,6 +237,29 @@
 | 2026-04-12 | PENDING_REVIEW | APPROVED       | Lead         | Approved — awaiting TASK-003                        |
 | 2026-04-13 | APPROVED       | IN_PROGRESS    | Developer    | Started implementation                              |
 | 2026-04-13 | IN_PROGRESS    | IN_REVIEW      | Developer    | PR Ready — ACs + integrations tests passing         |
+| 2026-04-13 | IN_REVIEW      | REJECTED       | QA           | DATA RACE detected in internal/worker_test. See report|
+
+### QA Rejection Report — INV-SPR01-TASK-004
+
+**Verified ACs:**
+- [x] AC-01: ✅ Edit the schema migration for `raw_telemetry` table.
+- [x] AC-02: ✅ Use `create_hypertable`...
+- [x] AC-03: ✅ Implement the `TelemetryRepository` pattern interface...
+- [x] AC-04: ❌ Batch insert when more than 10 records. Integration passed, but Worker testing introduced a data race.
+- [x] AC-05: ✅ Index on `device_id`.
+- [x] AC-06: ✅ Write an integration test using TestContainers.
+- [x] AC-07: ✅ Unique constraint `(device_id, f_cnt)`
+- [x] AC-08: ✅ Store `rssi` and `snr` fields
+
+**Quality Gate Results:**
+- Build: ✅
+- go vet: ✅
+- Tests: ✅
+- Race detector: ❌ DATA RACE in `internal/worker/storage_worker_test.go` on `mockRepo` variables (`saveBatchCount`)
+- Coverage: ✅ 82.6% (Worker), 67.2% (DB layer - accepted)
+
+**Required fixes before re-review:**
+1. Fix the DATA RACE in `internal/worker/storage_worker_test.go`. The `mockRepo` is read by the main test goroutine and written to by the `StorageWorker` goroutine concurrently without a Mutex. We need a `sync.Mutex` in `mockRepo`.
 
 ---
 

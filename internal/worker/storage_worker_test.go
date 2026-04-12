@@ -118,6 +118,9 @@ func TestStorageWorker_ContextCancellationFlush(t *testing.T) {
 
 	inChan <- telemetry.TelemetryPayload{DeviceID: "SCALE-CTX"}
 	
+	// Wait a tiny bit to ensure payload is pulled into batch before cancel triggered
+	time.Sleep(50 * time.Millisecond)
+
 	// Cancel forces exit and flush
 	cancel()
 	<-done
