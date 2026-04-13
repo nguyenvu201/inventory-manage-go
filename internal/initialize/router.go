@@ -42,6 +42,7 @@ func InitRouter() *gin.Engine {
 	// Repository layer
 	deviceRepo := postgres.NewDeviceRepository(global.Pdb)
 	calibRepo := postgres.NewCalibrationRepository(global.Pdb)
+	inventoryRepo := postgres.NewInventoryRepository(global.Pdb)
 
 	// Service layer
 	deviceSvc := impl.NewDeviceService(deviceRepo)
@@ -50,15 +51,18 @@ func InitRouter() *gin.Engine {
 	// Controller layer
 	deviceCtrl := controller.NewDeviceController(deviceSvc)
 	calibCtrl := controller.NewCalibrationController(calibSvc)
+	inventoryCtrl := controller.NewInventoryController(inventoryRepo)
 
 	// ── Route Groups ─────────────────────────────────────────
 	deviceRouter := routers.RouterGroupApp.Device
 	calibRouter := routers.RouterGroupApp.Calibration
+	inventoryRouter := routers.RouterGroupApp.Inventory
 
 	v1 := r.Group(fmt.Sprintf("/api/v1"))
 	{
 		deviceRouter.InitDeviceRouter(v1, deviceCtrl)
 		calibRouter.InitCalibrationRouter(v1, calibCtrl)
+		inventoryRouter.InitInventoryRouter(v1, inventoryCtrl)
 	}
 
 	return r

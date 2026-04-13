@@ -43,7 +43,7 @@
 |--------|-------------|-----------|-------------------|--------------------------------|
 | 1      | 4           | 4         | ✅ Completed       | TASK-004 closed                |
 | 2      | 4           | 4         | ✅ Completed       | All tasks (001 - 004) closed   |
-| 3      | 7           | 1         | 🔄 In Progress     | TASK-001 closed; TASK-002 submitted for review |
+| 3      | 7           | 2         | 🔄 In Progress     | TASK-001 and TASK-002 closed; TASK-003 ready to start |
 | 4      | 6           | 0         | 🔲 Not Started     | +2 new UI tasks (PDF Rev 2)    |
 | 5      | 5           | 0         | 🔲 Not Started     | +1 new UI task (PDF Rev 2)     |
 

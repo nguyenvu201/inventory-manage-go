@@ -62,8 +62,8 @@
 | Task ID               | Task Name                              | Status     | Assignee | Updated     |
 |-----------------------|----------------------------------------|------------|----------|-------------|
 | INV-SPR03-TASK-001    | Weight Conversion Logic                | 🔒 CLOSED   | Developer| 2026-04-13  |
-| INV-SPR03-TASK-002    | Inventory Calculation                  | 🔍 PENDING_REVIEW | —        | 2026-04-13  |
-| INV-SPR03-TASK-003    | Threshold Rules                        | 📝 DRAFT   | —        | 2026-04-12  |
+| INV-SPR03-TASK-002    | Inventory Calculation                  | 🔒 CLOSED   | Developer| 2026-04-13  |
+| INV-SPR03-TASK-003    | Threshold Rules                        | ✅ APPROVED | —        | 2026-04-13  |
 | INV-SPR03-TASK-004    | Historical Reporting API               | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-005    | Stock-out / Day Zero Forecasting       | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-006    | Consumption Anomaly Detection          | 📝 DRAFT   | —        | 2026-04-12  |

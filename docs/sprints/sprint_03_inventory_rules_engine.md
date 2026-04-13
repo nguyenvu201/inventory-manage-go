@@ -67,10 +67,10 @@ Net Weight   = Gross Weight - tare_weight
 ## [INV-SPR03-TASK-002] — Inventory Calculation
 
 > **Task ID:** `INV-SPR03-TASK-002`  
-> **Status:** 🔍 PENDING_REVIEW  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 3  
 
 **Description:** Convert net weight into a quantity (Qty) of stock-keeping units and a percentage of remaining inventory.
@@ -82,12 +82,12 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 ```
 
 **Acceptance Criteria:**
-- [ ] AC-01: Create schema migration for `sku_configs` table with: `sku_code` (PK), `unit_weight_kg`, `full_capacity_kg`, `tare_weight_kg`, `reorder_point_qty`, `unit_label`
-- [ ] AC-02: Implement `InventoryCalculator` service computing `qty` and `percentage`
-- [ ] AC-03: Persist results to `inventory_snapshots` table (device_id, sku_code, net_weight_kg, qty, percentage, snapshot_at)
-- [ ] AC-04: Implement `GET /api/v1/inventory/current` — current inventory status for all SKUs
-- [ ] AC-05: Implement `GET /api/v1/inventory/:sku_code/current` — current inventory for a single SKU
-- [ ] AC-06: Use UPSERT pattern to update the latest snapshot rather than continuously inserting
+- [x] AC-01: Create `sku_configs` table (`sku_code` PK, `unit_weight`, `full_capacity`, etc.).
+- [x] AC-02: Implement pure calculation function for Qty (floor division) and Percentage (clamped 0-100).
+- [x] AC-03: Create `inventory_snapshots` table with foreign keys to `devices` and `sku_configs`.
+- [x] AC-04: Expose `GET /api/v1/inventory/current` returning all active snapshots.
+- [x] AC-05: Expose `GET /api/v1/inventory/:sku_code/current` returning snapshots filtered by SKU.
+- [x] AC-06: Use UPSERT pattern to update the latest snapshot rather than continuously inserting.
 
 **Related Technologies:**
 - `math.Floor`, clamping logic
@@ -101,13 +101,18 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
 | 2026-04-13 | DRAFT| PENDING_REVIEW | BA  | Trình phê duyệt TASK-002 |
+| 2026-04-13 | PENDING_REVIEW | APPROVED | Lead | Approved TASK-002 |
+| 2026-04-13 | APPROVED | IN_PROGRESS | Developer | Nhận task, soạn thảo Implementation Plan |
+| 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer | Hoàn thành code logic (repo, controller, db), unit & int tests |
+| 2026-04-13 | IN_REVIEW | VERIFIED | QA | All ACs verified. Coverage 100% for inventory endpoints, DB tests pass, race check clean. |
+| 2026-04-13 | VERIFIED | CLOSED | Lead | Đã kiểm duyệt và lưu trữ TASK-002 |
 
 ---
 
 ## [INV-SPR03-TASK-003] — Threshold Rules
 
 > **Task ID:** `INV-SPR03-TASK-003`  
-> **Status:** 📝 DRAFT  
+> **Status:** ✅ APPROVED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -133,6 +138,8 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 | Date       | From | To    | Performed by | Notes        |
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
+| 2026-04-13 | DRAFT | PENDING_REVIEW | BA | Đề xuất TASK-003 |
+| 2026-04-13 | PENDING_REVIEW | APPROVED | Lead | Approved TASK-003, sẵn sàng giao cho dev |
 
 ---
 

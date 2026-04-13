@@ -55,3 +55,11 @@ type ITelemetryRepository interface {
 	FindByDeviceID(ctx context.Context, q model.TelemetryQuery) ([]*model.RawTelemetry, error)
 	IsDuplicate(ctx context.Context, deviceID string, fCnt uint32) (bool, error)
 }
+
+// IInventoryRepository is the persistence contract for inventory snapshots and SKU configs.
+type IInventoryRepository interface {
+	UpsertSnapshot(ctx context.Context, snapshot *model.InventorySnapshot) error
+	GetSnapshotBySKU(ctx context.Context, skuCode string) ([]*model.InventorySnapshot, error)
+	GetCurrentSnapshots(ctx context.Context) ([]*model.InventorySnapshot, error)
+	GetSKUConfig(ctx context.Context, skuCode string) (*model.SKUConfig, error)
+}
