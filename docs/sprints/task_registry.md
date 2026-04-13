@@ -61,8 +61,8 @@
 
 | Task ID               | Task Name                              | Status     | Assignee | Updated     |
 |-----------------------|----------------------------------------|------------|----------|-------------|
-| INV-SPR03-TASK-001    | Weight Conversion Logic                | 📝 DRAFT   | —        | 2026-04-12  |
-| INV-SPR03-TASK-002    | Inventory Calculation                  | 📝 DRAFT   | —        | 2026-04-12  |
+| INV-SPR03-TASK-001    | Weight Conversion Logic                | 🔒 CLOSED   | Developer| 2026-04-13  |
+| INV-SPR03-TASK-002    | Inventory Calculation                  | 🔍 PENDING_REVIEW | —        | 2026-04-13  |
 | INV-SPR03-TASK-003    | Threshold Rules                        | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-004    | Historical Reporting API               | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-005    | Stock-out / Day Zero Forecasting       | 📝 DRAFT   | —        | 2026-04-12  |
@@ -72,7 +72,7 @@
 > **Amended tasks:** TASK-001 (AC-08 added) — customer PDF Rev 2  
 > **New tasks:** TASK-005, TASK-006, TASK-007 — customer PDF Rev 2
 
-**Sprint 3 Status:** 🔲 Not Started | Tasks: 7 total / 0 done
+**Sprint 3 Status:** 🔄 In Progress | Tasks: 7 total / 1 done
 
 ---
 

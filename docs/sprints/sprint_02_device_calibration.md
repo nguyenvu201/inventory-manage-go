@@ -9,7 +9,7 @@
 | Field           | Value                                              |
 |-----------------|----------------------------------------------------|
 | Sprint          | 2 / 5                                              |
-| Status          | 🔄 In Progress                                     |
+| Status          | ✅ Completed                                       |
 | Created date    | 2026-04-12                                         |
 | Owner           | BA                                                 |
 | Priority        | High                                               |
@@ -160,7 +160,7 @@
 ## [INV-SPR02-TASK-004] — Audit Trail
 
 > **Task ID:** `INV-SPR02-TASK-004`  
-> **Status:** 🏆 VERIFIED  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** Developer  
@@ -194,6 +194,7 @@
 | 2026-04-13 | REJECTED | IN_PROGRESS | Developer | Rework: Bổ sung Unit Test cho RegisterCalibration, GetAuditHistory để push coverage >= 80% |
 | 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer | Đã viết `device_service_test.go` và fill coverage `calibration_service.go`, đạt 98.7%. Vui lòng review lại. |
 | 2026-04-13 | IN_REVIEW | VERIFIED | QA | All ACs verified. Coverage >= 80% (98.7%). All QC gates pass. |
+| 2026-04-13 | VERIFIED | CLOSED | Lead | Task hoàn thành và đạt chuẩn, verify đóng task. |
 
 ### QA Rejection Report — INV-SPR02-TASK-004
 

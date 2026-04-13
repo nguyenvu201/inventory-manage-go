@@ -9,9 +9,9 @@
 | Field           | Value                                                              |
 |-----------------|--------------------------------------------------------------------|
 | Sprint          | 3 / 5                                                              |
-| Status          | 🔲 Not Started                                                     |
+| Status          | 🔄 In Progress                                                     |
 | Created date    | 2026-04-12                                                         |
-| Owner           | —                                                                  |
+| Owner           | BA                                                                 |
 | Priority        | High                                                               |
 | Dependencies    | Sprint 1 & Sprint 2 complete (Definition of Done met ✅)            |
 
@@ -20,10 +20,10 @@
 ## [INV-SPR03-TASK-001] — Weight Conversion Logic
 
 > **Task ID:** `INV-SPR03-TASK-001`  
-> **Status:** 📝 DRAFT  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 3  
 
 **Description:** Apply the conversion formula to transform an ADC raw value into a net weight using the active calibration parameters.
@@ -35,14 +35,14 @@ Net Weight   = Gross Weight - tare_weight
 ```
 
 **Acceptance Criteria:**
-- [ ] AC-01: Implement `WeightConverter` service that accepts `raw_weight` and an active `CalibrationConfig`
-- [ ] AC-02: Calculate `gross_weight` from the ADC raw value using `zero_value` and `span_value`
-- [ ] AC-03: Calculate `net_weight = gross_weight - tare_weight` (tare sourced from SKU config)
-- [ ] AC-04: Support units kg, g, lb — automatically normalize to kg
-- [ ] AC-05: Round results to 3 decimal places
-- [ ] AC-06: Write unit tests covering edge cases: raw_weight = 0, raw_weight = max, no active calibration
-- [ ] AC-07: Return a clear error if no active calibration exists for the device
-- [ ] AC-08: Apply configurable measurement resolution rounding defined in `sku_configs.resolution_kg` (e.g., 0.1 for small bin, 0.5 for mid-size)
+- [x] AC-01: Implement `WeightConverter` service that accepts `raw_weight` and an active `CalibrationConfig`
+- [x] AC-02: Calculate `gross_weight` from the ADC raw value using `zero_value` and `span_value`
+- [x] AC-03: Calculate `net_weight = gross_weight - tare_weight` (tare sourced from SKU config)
+- [x] AC-04: Support units kg, g, lb — automatically normalize to kg
+- [x] AC-05: Round results to 3 decimal places
+- [x] AC-06: Write unit tests covering edge cases: raw_weight = 0, raw_weight = max, no active calibration
+- [x] AC-07: Return a clear error if no active calibration exists for the device
+- [x] AC-08: Apply configurable measurement resolution rounding defined in `sku_configs.resolution_kg` (e.g., 0.1 for small bin, 0.5 for mid-size)
 
 **Related Technologies:**
 - Pure function — no side effects to simplify testing
@@ -55,13 +55,19 @@ Net Weight   = Gross Weight - tare_weight
 |------------|------|-------|--------------|-----------------------------------------------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created                                        |
 | 2026-04-12 | DRAFT| DRAFT | BA           | AC-08 added — per-SKU resolution from customer PDF  |
+| 2026-04-13 | DRAFT| PENDING_REVIEW | BA  | Submit task for Sprint 3 kickoff                    |
+| 2026-04-13 | PENDING_REVIEW | APPROVED | Lead | ACs rõ nghĩa, sẵn sàng để deploy |
+| 2026-04-13 | APPROVED | IN_PROGRESS | Developer | Bắt đầu nhận task, drafting Implementation Plan cho Weight Converter |
+| 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer | Đã viết struct WeightConverter logic, check pass 8 ACs và tests đạt tỉ lệ coverage 94.7% |
+| 2026-04-13 | IN_REVIEW | VERIFIED | QA | VERIFIED: All ACs passed. Coverage = 94.7% (> 80%). Zero races. Quality gates passed. |
+| 2026-04-13 | VERIFIED | CLOSED | Lead | Code hoàn thiện, đóng task 001 để tiến hành task khác. |
 
 ---
 
 ## [INV-SPR03-TASK-002] — Inventory Calculation
 
 > **Task ID:** `INV-SPR03-TASK-002`  
-> **Status:** 📝 DRAFT  
+> **Status:** 🔍 PENDING_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -94,6 +100,7 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 | Date       | From | To    | Performed by | Notes        |
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
+| 2026-04-13 | DRAFT| PENDING_REVIEW | BA  | Trình phê duyệt TASK-002 |
 
 ---
 
