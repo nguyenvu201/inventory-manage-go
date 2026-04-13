@@ -45,6 +45,9 @@ For each changed file, note which AC it implements.
 **You MUST run ALL of these. Do not skip any.**
 
 ```bash
+# Export standard Go paths to avoid "command not found" in varying shells
+export PATH=/usr/local/go/bin:/opt/homebrew/bin:~/go/bin:$PATH
+
 # 1. Build — zero errors
 go build ./...
 
@@ -95,6 +98,9 @@ For the current active task `INV-SPR01-TASK-001`, check each AC:
 For any task touching telemetry ingestion, always verify:
 
 ```bash
+# Export standard Go paths
+export PATH=/usr/local/go/bin:/opt/homebrew/bin:~/go/bin:$PATH
+
 # Run targeted tests for IoT scenarios
 go test ./internal/worker/... -run TestReceiver -v
 go test ./internal/domain/telemetry/... -v
@@ -202,6 +208,7 @@ Required files to verify:
   ✓ Makefile                                       (AC-05)
 
 Commands to run:
+  export PATH=/usr/local/go/bin:/opt/homebrew/bin:~/go/bin:$PATH
   go build ./...
   go vet ./...
   go test ./... -count=1

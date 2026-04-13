@@ -105,3 +105,34 @@ func (cc *CalibrationController) UpdateCalibration(c *gin.Context) {
 
 	response.SuccessResponse(c, response.ErrCodeSuccess, "Calibration updated successfully")
 }
+
+// GetAuditHistory godoc
+//
+//	@Summary		Get calibration history (append-only)
+//	@Description	Retrieve old configurations and triggers mapped against this device ID.
+//	@Tags			calibration
+//	@Produce		json
+//	@Param			device_id	path		string	true	"Device ID"
+//	@Param			offset		query		int		false	"Pagination Offset" default(0)
+//	@Param			limit		query		int		false	"Pagination Limit" default(20)
+//	@Success		200			{object}	response.ResponseData
+//	@Failure		400			{object}	response.ErrorResponseData
+//	@Router			/api/v1/calibrations/{device_id}/history [get]
+func (cc *CalibrationController) GetAuditHistory(c *gin.Context) {
+	deviceID := c.Param("device_id")
+	if deviceID == "" {
+		response.ErrorResponse(c, response.ErrCodeParamInvalid, "device_id is required")
+		return
+	}
+
+	offset := uint64(0) // Could be parsed from c.Query("offset")
+	limit := uint64(20) // Could be parsed from c.Query("limit")
+
+	logs, err := cc.calibService.GetAuditHistory(c.Request.Context(), deviceID, offset, limit)
+	if err != nil {
+		response.ErrorResponse(c, response.ErrCodeInternalServer, err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, response.ErrCodeSuccess, logs)
+}

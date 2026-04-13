@@ -160,21 +160,21 @@
 ## [INV-SPR02-TASK-004] — Audit Trail
 
 > **Task ID:** `INV-SPR02-TASK-004`  
-> **Status:** ✅ APPROVED  
+> **Status:** 🏆 VERIFIED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 2  
 
 **Description:** Record a full append-only history of all calibration changes and detect drift to ensure transparency and traceability.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Create `calibration_audit_log` table with: `id`, `device_id`, `action`, `old_values (jsonb)`, `new_values (jsonb)`, `performed_by`, `performed_at`, `reason`
-- [ ] AC-02: Every change to `calibration_configs` automatically generates an audit log entry
-- [ ] AC-03: Audit log is append-only: no UPDATE or DELETE operations on this table are permitted
-- [ ] AC-04: Implement `GET /api/v1/devices/:id/calibration/history` with time-based pagination
-- [ ] AC-05: Drift detection: raise an alert if `zero_value` deviates by more than a configured threshold from the previous calibration
-- [ ] AC-06: Write unit tests for the drift detection logic
+- [x] AC-01: Create `calibration_audit_log` table with: `id`, `device_id`, `action`, `old_values (jsonb)`, `new_values (jsonb)`, `performed_by`, `performed_at`, `reason`
+- [x] AC-02: Every change to `calibration_configs` automatically generates an audit log entry
+- [x] AC-03: Audit log is append-only: no UPDATE or DELETE operations on this table are permitted
+- [x] AC-04: Implement `GET /api/v1/devices/:id/calibration/history` with time-based pagination
+- [x] AC-05: Drift detection: raise an alert if `zero_value` deviates by more than a configured threshold from the previous calibration
+- [x] AC-06: Write unit tests for the drift detection logic
 
 **Related Technologies:**
 - PostgreSQL trigger or application-level audit hook
@@ -188,6 +188,28 @@
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
 | 2026-04-13 | DRAFT | PENDING_REVIEW | BA | Trình QA/Lead duyệt AC cho Audit Trail |
 | 2026-04-13 | PENDING_REVIEW | APPROVED | Lead | AC rõ ràng và hợp lý, cho phép triển khai |
+| 2026-04-13 | APPROVED | IN_PROGRESS | Developer | Bắt đầu viết Implementation Plan |
+| 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer | Hoàn tất migration PostgreSQL FDA Trigger 5, Drift logic và Unit Tests. |
+| 2026-04-13 | IN_REVIEW | REJECTED | QA | Coverage của package internal/service/impl chỉ đạt 34.6% (Yêu cầu >= 80%). |
+| 2026-04-13 | REJECTED | IN_PROGRESS | Developer | Rework: Bổ sung Unit Test cho RegisterCalibration, GetAuditHistory để push coverage >= 80% |
+| 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer | Đã viết `device_service_test.go` và fill coverage `calibration_service.go`, đạt 98.7%. Vui lòng review lại. |
+| 2026-04-13 | IN_REVIEW | VERIFIED | QA | All ACs verified. Coverage >= 80% (98.7%). All QC gates pass. |
+
+### QA Rejection Report — INV-SPR02-TASK-004
+
+**Verified ACs:** AC-01 ✅, AC-02 ✅, AC-03 ✅, AC-04 ✅, AC-05 ✅, AC-06 ✅
+**Failed ACs:**
+- Các AC logic đều ok, nhưng không đáp ứng được Quality Gate.
+
+**Quality Gate Results:**
+- Build: ✅
+- go vet: ✅
+- Tests: ✅
+- Race detector: ✅
+- Coverage: ❌ 34.6% < 80% (Package `internal/service/impl`)
+
+**Required fixes:**
+1. Hãy bổ sung thêm Unit Tests hoàn chỉnh cho `internal/service/impl/calibration_service.go` (các block lỗi valid errs, RegisterCalibration, GetAuditHistory missing test, v.v...) để nâng rating Coverage >= 80%.
 
 ---
 

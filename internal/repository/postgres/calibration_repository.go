@@ -157,3 +157,42 @@ func (r *calibrationRepository) UpdateCalibrationTx(ctx context.Context, deviceI
 	}
 	return nil
 }
+
+func (r *calibrationRepository) GetAuditHistory(ctx context.Context, deviceID string, offset, limit uint64) ([]model.CalibrationAuditLog, error) {
+	q, args, err := r.psql.
+		Select("id", "device_id", "action", "old_values", "new_values", "performed_by", "performed_at", "reason").
+		From("calibration_audit_logs").
+		Where(sq.Eq{"device_id": deviceID}).
+		OrderBy("performed_at DESC").
+		Limit(limit).
+		Offset(offset).
+		ToSql()
+
+	if err != nil {
+		return nil, fmt.Errorf("building audit logs query: %w", err)
+	}
+
+	rows, err := r.db.Query(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("querying audit logs: %w", err)
+	}
+	defer rows.Close()
+
+	var logs []model.CalibrationAuditLog
+	for rows.Next() {
+		var log model.CalibrationAuditLog
+		if err := rows.Scan(
+			&log.ID, &log.DeviceID, &log.Action, &log.OldValues, &log.NewValues,
+			&log.PerformedBy, &log.PerformedAt, &log.Reason,
+		); err != nil {
+			return nil, fmt.Errorf("scanning audit log row: %w", err)
+		}
+		logs = append(logs, log)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return logs, nil
+}
