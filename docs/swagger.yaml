@@ -1,0 +1,373 @@
+basePath: /
+definitions:
+  inventory-manage_internal_model.CalibrationConfig:
+    properties:
+      calibration_type:
+        type: string
+      capacity_max:
+        type: number
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deactivated_at:
+        type: string
+      device_id:
+        type: string
+      effective_from:
+        type: string
+      hardware_config:
+        additionalProperties: true
+        type: object
+      id:
+        type: integer
+      span_value:
+        type: number
+      unit:
+        type: string
+      zero_value:
+        type: number
+    type: object
+  inventory-manage_internal_model.Device:
+    properties:
+      created_at:
+        type: string
+      device_id:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+      sku_code:
+        type: string
+      status:
+        $ref: '#/definitions/inventory-manage_internal_model.DeviceStatus'
+      updated_at:
+        type: string
+    type: object
+  inventory-manage_internal_model.DeviceStatus:
+    enum:
+    - active
+    - inactive
+    - maintenance
+    type: string
+    x-enum-varnames:
+    - StatusActive
+    - StatusInactive
+    - StatusMaintenance
+  inventory-manage_internal_model.UpdateCalibrationParams:
+    properties:
+      calibration_type:
+        type: string
+      capacity_max:
+        type: number
+      created_by:
+        type: string
+      hardware_config:
+        additionalProperties: true
+        type: object
+      span_value:
+        type: number
+      unit:
+        type: string
+      zero_value:
+        type: number
+    required:
+    - calibration_type
+    - capacity_max
+    - created_by
+    - span_value
+    - unit
+    - zero_value
+    type: object
+  inventory-manage_pkg_response.ErrorResponseData:
+    properties:
+      code:
+        type: integer
+      detail:
+        description: optional extra context
+        type: string
+      message:
+        type: string
+    type: object
+  inventory-manage_pkg_response.ResponseData:
+    properties:
+      code:
+        description: business status code (20001, 40001 …)
+        type: integer
+      data:
+        description: response payload (nil on error)
+      message:
+        description: human-readable message
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: dev@inventory-manage.local
+    name: Inventory Manage Team
+  description: IoT Scale Inventory Management — FDA 21 CFR Part 11 compliant REST
+    API.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://github.com/inventory-manage
+  title: Inventory Management System API
+  version: 1.0.0
+paths:
+  /api/v1/calibrations:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new calibration profile for an IoT scale
+      parameters:
+      - description: Calibration config payload
+        in: body
+        name: config
+        required: true
+        schema:
+          $ref: '#/definitions/inventory-manage_internal_model.CalibrationConfig'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ErrorResponseData'
+      summary: Register calibration config for a device
+      tags:
+      - calibration
+  /api/v1/calibrations/{device_id}/active:
+    get:
+      parameters:
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ErrorResponseData'
+      summary: Get the active calibration config for a device
+      tags:
+      - calibration
+  /api/v1/calibrations/{device_id}/history:
+    get:
+      description: Retrieve old configurations and triggers mapped against this device
+        ID.
+      parameters:
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      - default: 0
+        description: Pagination Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Pagination Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ErrorResponseData'
+      summary: Get calibration history (append-only)
+      tags:
+      - calibration
+  /api/v1/calibrations/{device_id}/update:
+    post:
+      consumes:
+      - application/json
+      description: Deactivates the current config and creates a new one in a single
+        transaction (initial, periodic, drift_correction)
+      parameters:
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      - description: Calibration update payload
+        in: body
+        name: config
+        required: true
+        schema:
+          $ref: '#/definitions/inventory-manage_internal_model.UpdateCalibrationParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ErrorResponseData'
+      summary: Update / Add a new active calibration config for a device
+      tags:
+      - calibration
+  /api/v1/devices:
+    get:
+      description: Returns all registered devices, optionally filtered by status or
+        sku_code
+      parameters:
+      - description: Device status filter (active|inactive|maintenance)
+        in: query
+        name: status
+        type: string
+      - description: SKU code filter
+        in: query
+        name: sku_code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+      summary: List all devices
+      tags:
+      - devices
+    post:
+      consumes:
+      - application/json
+      description: Creates a new device record in the inventory system
+      parameters:
+      - description: Device payload
+        in: body
+        name: device
+        required: true
+        schema:
+          $ref: '#/definitions/inventory-manage_internal_model.Device'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ErrorResponseData'
+      summary: Register a new IoT scale device
+      tags:
+      - devices
+  /api/v1/devices/{id}:
+    delete:
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+      summary: Delete a device
+      tags:
+      - devices
+    get:
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+      summary: Get a device by ID
+      tags:
+      - devices
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated device data
+        in: body
+        name: device
+        required: true
+        schema:
+          $ref: '#/definitions/inventory-manage_internal_model.Device'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+      summary: Update a device
+      tags:
+      - devices
+  /api/v1/inventory/{sku_code}/current:
+    get:
+      description: Returns the latest inventory snapshots for devices holding the
+        specific SKU
+      parameters:
+      - description: SKU Code
+        in: path
+        name: sku_code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ErrorResponseData'
+      summary: Get current inventory for a specific SKU
+      tags:
+      - inventory
+  /api/v1/inventory/current:
+    get:
+      description: Returns the latest inventory snapshots across all connected devices
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ResponseData'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/inventory-manage_pkg_response.ErrorResponseData'
+      summary: Get current inventory snapshots across all SKUs
+      tags:
+      - inventory
+swagger: "2.0"

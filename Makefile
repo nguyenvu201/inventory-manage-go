@@ -81,6 +81,11 @@ lint:  ## Run go vet and staticcheck
 	@which staticcheck > /dev/null 2>&1 && staticcheck ./... || \
 		echo "⚠ staticcheck not installed. Run: go install honnef.co/go/tools/cmd/staticcheck@latest"
 
+swag:  ## Generate Swagger documentation
+	@echo "▶ Generating Swagger docs..."
+	swag init -g cmd/server/main.go --parseDependency --parseInternal
+	@echo "✓ Swagger docs generated in docs/"
+
 # ── Migrations ─────────────────────────────────────────────────────────────────
 migrate:  ## Apply all pending migrations (up)
 	@echo "▶ Running migrations (up)..."

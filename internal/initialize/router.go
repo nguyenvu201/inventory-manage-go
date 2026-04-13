@@ -3,14 +3,17 @@ package initialize
 import (
 	"fmt"
 
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "inventory-manage/docs"
 	"inventory-manage/global"
 	"inventory-manage/internal/controller"
 	"inventory-manage/internal/middlewares"
 	"inventory-manage/internal/repository/postgres"
 	"inventory-manage/internal/routers"
 	"inventory-manage/internal/service/impl"
-
-	"github.com/gin-gonic/gin"
 )
 
 // InitRouter builds and returns the Gin engine with all routes registered.
@@ -37,6 +40,11 @@ func InitRouter() *gin.Engine {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "inventory-manage"})
 	})
+
+	devRouter := r.Group("")
+	{
+		devRouter.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	// ── Dependency Injection ─────────────────────────────────
 	// Repository layer
