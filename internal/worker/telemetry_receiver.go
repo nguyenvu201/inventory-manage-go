@@ -6,13 +6,24 @@ import (
 	"fmt"
 	"time"
 
+	"inventory-manage/global"
 	"inventory-manage/internal/domain/telemetry"
+	"inventory-manage/internal/model"
 	inventorymqtt "inventory-manage/internal/platform/mqtt"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
+	"go.uber.org/zap"
 )
+
+// log returns the global logger if initialised, or a no-op logger for tests.
+func log() *zap.Logger {
+	if global.Logger != nil {
+		return global.Logger.Logger
+	}
+	return zap.NewNop()
+}
+
 
 // TelemetryReceiver sits at the boundary, consuming MQTT messages, verifying their structure,
 // passing them to the business rules processor, and feeding them to the downstream channel.
@@ -20,11 +31,16 @@ type TelemetryReceiver struct {
 	client    *inventorymqtt.Client
 	processor *telemetry.Processor
 	validator *telemetry.Validator
-	outChan   chan<- telemetry.TelemetryPayload
+	outChan   chan<- model.TelemetryPayload
 }
 
 // NewTelemetryReceiver constructs the gateway message receiver.
-func NewTelemetryReceiver(client *inventorymqtt.Client, processor *telemetry.Processor, validator *telemetry.Validator, outChan chan<- telemetry.TelemetryPayload) *TelemetryReceiver {
+func NewTelemetryReceiver(
+	client *inventorymqtt.Client,
+	processor *telemetry.Processor,
+	validator *telemetry.Validator,
+	outChan chan<- model.TelemetryPayload,
+) *TelemetryReceiver {
 	return &TelemetryReceiver{
 		client:    client,
 		processor: processor,
@@ -33,28 +49,24 @@ func NewTelemetryReceiver(client *inventorymqtt.Client, processor *telemetry.Pro
 	}
 }
 
-// Start begins subscribing to the Mosquitto broker (AC-02).
+// Start begins subscribing to the MQTT topic.
 func (r *TelemetryReceiver) Start() error {
 	topic := "application/+/device/+/event/up"
-	log.Info().Str("topic", topic).Msg("Starting telemetry receiver subscription")
+	log().Info("Starting telemetry receiver subscription", zap.String("topic", topic))
 
-	err := r.client.Subscribe(topic, 1, r.handleMessage)
-	if err != nil {
+	if err := r.client.Subscribe(topic, 1, r.handleMessage); err != nil {
 		return fmt.Errorf("telemetryReceiver.Start: %w", err)
 	}
-
 	return nil
 }
 
 // handleMessage is the callback from the Paho MQTT client.
 func (r *TelemetryReceiver) handleMessage(client paho.Client, msg paho.Message) {
-	// Create context with a timeout for internal processing
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := r.ProcessPayload(ctx, msg.Payload()); err != nil {
-		// Just log the error, don't crash the worker
-		log.Error().Err(err).Msg("failed to process telemetry MQTT message")
+		log().Error("failed to process telemetry MQTT message", zap.Error(err))
 	}
 }
 
@@ -62,7 +74,7 @@ func (r *TelemetryReceiver) handleMessage(client paho.Client, msg paho.Message) 
 func (r *TelemetryReceiver) ProcessPayload(ctx context.Context, raw []byte) error {
 	traceID := uuid.New().String()
 
-	var uplink telemetry.ChirpStackUplink
+	var uplink model.ChirpStackUplink
 	if err := json.Unmarshal(raw, &uplink); err != nil {
 		return fmt.Errorf("json unmarshal failed: %w", err)
 	}
@@ -72,16 +84,15 @@ func (r *TelemetryReceiver) ProcessPayload(ctx context.Context, raw []byte) erro
 		return fmt.Errorf("device_id missing from payload")
 	}
 
-	// AC-06: Log every received message including device_id and trace_id
-	logger := log.With().Str("device_id", deviceID).Str("trace_id", traceID).Logger()
-	logger.Info().Msg("Received telemetry message from gateway")
+	log().Info("Received telemetry message from gateway",
+		zap.String("device_id", deviceID),
+		zap.String("trace_id", traceID),
+	)
 
-	// AC-09: Validate f_cnt field
 	if uplink.FCnt == nil {
 		return fmt.Errorf("f_cnt is missing in payload")
 	}
 
-	// Calculate Gateway metrics
 	var rssi int
 	var snr float32
 	if len(uplink.RxInfo) > 0 {
@@ -89,11 +100,11 @@ func (r *TelemetryReceiver) ProcessPayload(ctx context.Context, raw []byte) erro
 		snr = uplink.RxInfo[0].Snr
 	}
 
-	// Fallback Base64 Decoder if Object is unparsed
 	rawWeight := uplink.Object.RawWeight
 	battery := uplink.Object.BatteryLevel
 	sampleCount := uplink.Object.SampleCount
-	
+
+	// Fallback: Base64 decoder if Object is unparsed
 	if sampleCount == 0 && uplink.Data != "" {
 		w, b, s, decErr := telemetry.DecodeBase64Payload(uplink.Data)
 		if decErr == nil {
@@ -101,12 +112,16 @@ func (r *TelemetryReceiver) ProcessPayload(ctx context.Context, raw []byte) erro
 			battery = b
 			sampleCount = s
 		} else {
-			logger.Warn().Err(decErr).Msg("failed to decode fallback base64 payload")
+			log().Warn("failed to decode fallback base64 payload",
+				zap.String("device_id", deviceID),
+				zap.String("trace_id", traceID),
+				zap.Error(decErr),
+			)
 		}
 	}
 
-	// AC-07: Construct TelemetryPayload
-	payload := telemetry.TelemetryPayload{
+	// Build the domain TelemetryPayload (still using domain validator/processor)
+	domainPayload := telemetry.TelemetryPayload{
 		DeviceID:        deviceID,
 		RawWeight:       rawWeight,
 		BatteryLevel:    battery,
@@ -118,22 +133,39 @@ func (r *TelemetryReceiver) ProcessPayload(ctx context.Context, raw []byte) erro
 		ReceivedAt:      time.Now(),
 	}
 
-	// AC-02, AC-04: Validate payload structure before moving to processor
-	if err := r.validator.Validate(payload); err != nil {
-		logger.Error().Err(err).Msg("telemetry payload validation failed")
+	if err := r.validator.Validate(domainPayload); err != nil {
+		log().Error("telemetry payload validation failed",
+			zap.String("device_id", deviceID),
+			zap.String("trace_id", traceID),
+			zap.Error(err),
+		)
 		return fmt.Errorf("payload validation error: %w", err)
 	}
 
-	// AC-08: Moving average processing
-	processedPayload, err := r.processor.Process(ctx, payload)
+	processedDomain, err := r.processor.Process(ctx, domainPayload)
 	if err != nil {
 		return fmt.Errorf("processor.Process: %w", err)
 	}
 
-	// AC-05: Push valid messages into a buffered channel
+	// Convert domain payload → model.TelemetryPayload for the model-based pipeline
+	payload := model.TelemetryPayload{
+		DeviceID:        processedDomain.DeviceID,
+		RawWeight:       processedDomain.RawWeight,
+		BatteryLevel:    processedDomain.BatteryLevel,
+		RSSI:            processedDomain.RSSI,
+		SNR:             processedDomain.SNR,
+		FCnt:            processedDomain.FCnt,
+		SpreadingFactor: processedDomain.SpreadingFactor,
+		SampleCount:     processedDomain.SampleCount,
+		ReceivedAt:      processedDomain.ReceivedAt,
+	}
+
 	select {
-	case r.outChan <- processedPayload:
-		logger.Debug().Msg("Payload pushed to downstream processing channel")
+	case r.outChan <- payload:
+		log().Debug("Payload pushed to downstream processing channel",
+			zap.String("device_id", deviceID),
+			zap.String("trace_id", traceID),
+		)
 	case <-ctx.Done():
 		return fmt.Errorf("timeout pushing to downstream channel: %w", ctx.Err())
 	}

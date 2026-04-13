@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"inventory-manage/internal/domain/device"
+	"inventory-manage/internal/model"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
@@ -27,19 +27,19 @@ func mapDBError(err error) error {
 		return nil
 	}
 	if errors.Is(err, pgx.ErrNoRows) {
-		return device.ErrDeviceNotFound
+		return model.ErrDeviceNotFound
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		// 23505 is unique_violation
 		if pgErr.Code == "23505" {
-			return device.ErrDuplicateDevice
+			return model.ErrDuplicateDevice
 		}
 	}
 	return err
 }
 
-func (r *DeviceRepository) Save(ctx context.Context, d *device.Device) error {
+func (r *DeviceRepository) Save(ctx context.Context, d *model.Device) error {
 	query, args, err := psql.Insert("devices").
 		Columns("device_id", "name", "sku_code", "location", "status", "created_at", "updated_at").
 		Values(d.DeviceID, d.Name, d.SKUCode, d.Location, d.Status, d.CreatedAt, d.UpdatedAt).
@@ -53,7 +53,7 @@ func (r *DeviceRepository) Save(ctx context.Context, d *device.Device) error {
 	return mapDBError(err)
 }
 
-func (r *DeviceRepository) FindByID(ctx context.Context, id string) (*device.Device, error) {
+func (r *DeviceRepository) FindByID(ctx context.Context, id string) (*model.Device, error) {
 	query, args, err := psql.Select("device_id", "name", "sku_code", "location", "status", "created_at", "updated_at").
 		From("devices").
 		Where(squirrel.Eq{"device_id": id}).
@@ -63,7 +63,7 @@ func (r *DeviceRepository) FindByID(ctx context.Context, id string) (*device.Dev
 		return nil, err
 	}
 
-	var d device.Device
+	var d model.Device
 	err = r.pool.QueryRow(ctx, query, args...).Scan(
 		&d.DeviceID, &d.Name, &d.SKUCode, &d.Location, &d.Status, &d.CreatedAt, &d.UpdatedAt,
 	)
@@ -74,7 +74,7 @@ func (r *DeviceRepository) FindByID(ctx context.Context, id string) (*device.Dev
 	return &d, nil
 }
 
-func (r *DeviceRepository) FindAll(ctx context.Context, q device.DeviceQuery) ([]*device.Device, error) {
+func (r *DeviceRepository) FindAll(ctx context.Context, q model.DeviceQuery) ([]*model.Device, error) {
 	builder := psql.Select("device_id", "name", "sku_code", "location", "status", "created_at", "updated_at").
 		From("devices").
 		OrderBy("created_at DESC")
@@ -97,9 +97,9 @@ func (r *DeviceRepository) FindAll(ctx context.Context, q device.DeviceQuery) ([
 	}
 	defer rows.Close()
 
-	var devices []*device.Device
+	var devices []*model.Device
 	for rows.Next() {
-		var d device.Device
+		var d model.Device
 		if err := rows.Scan(&d.DeviceID, &d.Name, &d.SKUCode, &d.Location, &d.Status, &d.CreatedAt, &d.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -109,7 +109,7 @@ func (r *DeviceRepository) FindAll(ctx context.Context, q device.DeviceQuery) ([
 	return devices, rows.Err()
 }
 
-func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
+func (r *DeviceRepository) Update(ctx context.Context, d *model.Device) error {
 	query, args, err := psql.Update("devices").
 		Set("name", d.Name).
 		Set("sku_code", d.SKUCode).
@@ -128,7 +128,7 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 	}
 
 	if tag.RowsAffected() == 0 {
-		return device.ErrDeviceNotFound
+		return model.ErrDeviceNotFound
 	}
 	return nil
 }
@@ -148,7 +148,7 @@ func (r *DeviceRepository) Delete(ctx context.Context, id string) error {
 	}
 
 	if tag.RowsAffected() == 0 {
-		return device.ErrDeviceNotFound
+		return model.ErrDeviceNotFound
 	}
 	return nil
 }

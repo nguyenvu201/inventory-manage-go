@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"inventory-manage/internal/domain/device"
+	"inventory-manage/internal/model"
+	"inventory-manage/internal/service"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
@@ -18,7 +19,7 @@ type calibrationRepository struct {
 	psql sq.StatementBuilderType
 }
 
-func NewCalibrationRepository(db *pgxpool.Pool) device.CalibrationRepository {
+func NewCalibrationRepository(db *pgxpool.Pool) service.ICalibrationRepository {
 	return &calibrationRepository{
 		db:   db,
 		psql: sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
@@ -26,7 +27,7 @@ func NewCalibrationRepository(db *pgxpool.Pool) device.CalibrationRepository {
 }
 
 // Save inserts a new configuration and implicitly deactivates the previous active one.
-func (r *calibrationRepository) Save(ctx context.Context, config *device.CalibrationConfig) error {
+func (r *calibrationRepository) Save(ctx context.Context, config *model.CalibrationConfig) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("db.Begin: %w", err)
@@ -75,7 +76,7 @@ func (r *calibrationRepository) Save(ctx context.Context, config *device.Calibra
 	return tx.Commit(ctx)
 }
 
-func (r *calibrationRepository) GetActive(ctx context.Context, deviceID string) (*device.CalibrationConfig, error) {
+func (r *calibrationRepository) GetActive(ctx context.Context, deviceID string) (*model.CalibrationConfig, error) {
 	q, args, err := r.psql.
 		Select("id", "device_id", "zero_value", "span_value", "unit", "capacity_max", "hardware_config", "effective_from", "created_by", "created_at").
 		From("calibration_configs").
@@ -87,14 +88,14 @@ func (r *calibrationRepository) GetActive(ctx context.Context, deviceID string) 
 		return nil, fmt.Errorf("building get_active query: %w", err)
 	}
 
-	var c device.CalibrationConfig
+	var c model.CalibrationConfig
 	err = r.db.QueryRow(ctx, q, args...).Scan(
 		&c.ID, &c.DeviceID, &c.ZeroValue, &c.SpanValue, &c.Unit, &c.CapacityMax, &c.HardwareConfig, &c.EffectiveFrom, &c.CreatedBy, &c.CreatedAt,
 	)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("no active config: %w", device.ErrDeviceNotFound)
+			return nil, fmt.Errorf("no active config: %w", model.ErrDeviceNotFound)
 		}
 		return nil, fmt.Errorf("querying active config: %w", err)
 	}

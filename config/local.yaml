@@ -1,0 +1,40 @@
+server:
+  port: 8080
+  mode: dev   # dev | release
+
+postgres:
+  host: localhost
+  port: 5432
+  username: inventory_user
+  password: inventory_secret
+  dbname: inventory_db
+  sslmode: disable
+  maxConns: 20
+  minConns: 2
+  connMaxLifetimeSec: 3600
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  database: 0
+  poolSize: 10
+
+mqtt:
+  broker: localhost
+  port: 1883
+  clientId: inventory-manage-dev
+  username: ""
+  password: ""
+
+logger:
+  level: debug
+  fileLogName: ./storages/logs/inventory.log
+  maxSize: 100      # MB
+  maxBackups: 7
+  maxAge: 30        # days
+  compress: false
+
+jwt:
+  secretKey: "change-me-in-production"
+  expiryHour: 24

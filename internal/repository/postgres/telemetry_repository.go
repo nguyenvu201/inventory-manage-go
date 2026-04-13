@@ -10,7 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"inventory-manage/internal/domain/telemetry"
+	"inventory-manage/internal/model"
+	"inventory-manage/internal/service"
 )
 
 // TelemetryRepository implements telemetry.Repository using pgx/v5.
@@ -20,7 +21,7 @@ type TelemetryRepository struct {
 }
 
 // NewTelemetryRepository returns a new pgx-based repository.
-func NewTelemetryRepository(db *pgxpool.Pool) telemetry.Repository {
+func NewTelemetryRepository(db *pgxpool.Pool) service.ITelemetryRepository {
 	return &TelemetryRepository{
 		db: db,
 		qb: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar),
@@ -28,7 +29,7 @@ func NewTelemetryRepository(db *pgxpool.Pool) telemetry.Repository {
 }
 
 // Save persists a single record.
-func (r *TelemetryRepository) Save(ctx context.Context, t *telemetry.RawTelemetry) error {
+func (r *TelemetryRepository) Save(ctx context.Context, t *model.RawTelemetry) error {
 	query, args, err := r.qb.Insert("raw_telemetry").
 		Columns(
 			"device_id", "raw_weight", "battery_level",
@@ -56,7 +57,7 @@ func (r *TelemetryRepository) Save(ctx context.Context, t *telemetry.RawTelemetr
 }
 
 // SaveBatch executes a pgx.Batch to insert multiple records simultaneously.
-func (r *TelemetryRepository) SaveBatch(ctx context.Context, records []*telemetry.RawTelemetry) error {
+func (r *TelemetryRepository) SaveBatch(ctx context.Context, records []*model.RawTelemetry) error {
 	if len(records) == 0 {
 		return nil
 	}
@@ -104,7 +105,7 @@ func (r *TelemetryRepository) SaveBatch(ctx context.Context, records []*telemetr
 }
 
 // FindByDeviceID returns records ordered by time.
-func (r *TelemetryRepository) FindByDeviceID(ctx context.Context, q telemetry.TelemetryQuery) ([]*telemetry.RawTelemetry, error) {
+func (r *TelemetryRepository) FindByDeviceID(ctx context.Context, q model.TelemetryQuery) ([]*model.RawTelemetry, error) {
 	if q.DeviceID == "" {
 		return nil, errors.New("device_id is required")
 	}
@@ -135,9 +136,9 @@ func (r *TelemetryRepository) FindByDeviceID(ctx context.Context, q telemetry.Te
 	}
 	defer rows.Close()
 
-	var results []*telemetry.RawTelemetry
+	var results []*model.RawTelemetry
 	for rows.Next() {
-		var t telemetry.RawTelemetry
+		var t model.RawTelemetry
 		err := rows.Scan(
 			&t.ID, &t.DeviceID, &t.RawWeight, &t.BatteryLevel,
 			&t.RSSI, &t.SNR, &t.FCnt, &t.SpreadingFactor, &t.SampleCount,
@@ -190,7 +191,7 @@ func isUniqueViolation(err error) bool {
 
 func (r *TelemetryRepository) handleError(err error, op string) error {
 	if isUniqueViolation(err) {
-		return telemetry.ErrDuplicatePacket
+		return model.ErrDuplicatePacket
 	}
 	return fmt.Errorf("postgres.TelemetryRepository.%s err: %w", op, err)
 }

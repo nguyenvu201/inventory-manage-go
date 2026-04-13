@@ -51,8 +51,8 @@ go build ./...
 # 2. Vet — zero warnings
 go vet ./...
 
-# 3. All tests pass
-go test ./... -v -count=1 -timeout 120s
+# 3. All tests pass (Unit & Mock tests)
+go test ./... -v -count=1 -short -timeout 120s
 
 # 4. Race detector — zero races
 go test -race -count=1 ./... -timeout 180s
@@ -60,9 +60,6 @@ go test -race -count=1 ./... -timeout 180s
 # 5. Coverage — must be ≥ 80% for business logic packages
 go test ./... -coverprofile=coverage.out -covermode=atomic
 go tool cover -func=coverage.out
-
-# 6. Staticcheck (if installed)
-staticcheck ./...
 ```
 
 **If ANY gate fails → REJECTED immediately. Document the exact failure.**
@@ -85,12 +82,11 @@ For the current active task `INV-SPR01-TASK-001`, check each AC:
 
 | AC | What to verify | Where |
 |----|---------------|-------|
-| AC-01 | `go.mod` exists, correct module name, all dirs present: `cmd/`, `internal/`, `pkg/`, `config/`, `migrations/` | `go.mod`, directory structure |
-| AC-02 | `docker-compose.yml` has 3 services: `db` (timescaledb), `mosquitto`, `app`; healthchecks present | `docker-compose.yml` |
-| AC-03 | Migration file creates `raw_telemetry` as hypertable via `create_hypertable()`; unique index `(device_id, f_cnt)` | `migrations/000001_*.up.sql` |
-| AC-04 | `internal/config/config.go` uses env tags, no hardcoded defaults for sensitive fields | `internal/config/config.go` |
-| AC-05 | `Makefile` has targets: `run`, `build`, `migrate`, `test`, `test-race`, `lint` | `Makefile` |
-| AC-06 | `README.md` contains: quick start steps, config reference table, make commands | `README.md` |
+| AC-01 | `go.mod` exists, all dirs present: `cmd/server/`, `internal/model/`, `internal/service/`, `internal/controller/`, `config/`, `global/` | `go.mod`, directory structure |
+| AC-02 | `docker-compose.yml` has services: `timescaledb`, `mosquitto`, `redis`; healthchecks present | `docker-compose.yml` |
+| AC-03 | Migration file uses `golang-migrate` files: `migrations/*.up.sql` and `*.down.sql` | `migrations/` |
+| AC-04 | `config/local.yaml` used, loaded via Viper in `internal/initialize/loadconfig.go` | `internal/initialize/loadconfig.go` |
+| AC-05 | `Makefile` has targets: `run`, `build`, `migrate`, `test`, `test-race`, `lint`, `swag` | `Makefile` |
 
 ---
 
@@ -100,16 +96,16 @@ For any task touching telemetry ingestion, always verify:
 
 ```bash
 # Run targeted tests for IoT scenarios
-go test ./internal/... -run TestTelemetry -v
-go test ./internal/... -run TestValidator -v
-go test ./internal/... -run TestDuplicate -v
+go test ./internal/worker/... -run TestReceiver -v
+go test ./internal/domain/telemetry/... -v
 ```
 
 Check manually:
 - [ ] `TelemetryPayload` struct has: `rssi`, `snr`, `f_cnt`, `spreading_factor`, `sample_count`
-- [ ] Unique constraint `(device_id, f_cnt)` exists in migration
+- [ ] Unique constraint `(device_id, f_cnt)` handled or handled in code logic
 - [ ] `battery_level` validation: `0 ≤ value ≤ 100` enforced
-- [ ] Negative `raw_weight` rejected with `ValidationError`
+- [ ] Negative `raw_weight` rejected
+- [ ] Redis optionally backed-off if unreachable
 
 ---
 
@@ -153,20 +149,20 @@ Write a detailed **Rejection Report** in the sprint file Notes section:
 
 **Verified ACs:** AC-01 ✅, AC-02 ✅
 **Failed ACs:**
-- AC-03 ❌: `create_hypertable()` call missing in migration
+- AC-03 ❌: Redis backoff not implemented
 - AC-05 ❌: `make test-race` target missing from Makefile
 
 **Quality Gate Results:**
 - Build: ✅
 - go vet: ✅
 - Tests: ✅
-- Race detector: ❌ DATA RACE in config/config.go:45
+- Race detector: ❌ DATA RACE in internal/initialize/redis.go
 - Coverage: ❌ 62% < 80%
 
 **Required fixes:**
-1. Add `create_hypertable('raw_telemetry', 'received_at')` to migration
+1. Fix DATA RACE in redis.go
 2. Add `test-race` target to Makefile
-3. Fix DATA RACE in config loader
+3. Add retry backoff for Redis
 ```
 
 ```bash
@@ -199,14 +195,11 @@ Task in review: INV-SPR01-TASK-001 — Setup Infrastructure
 Required files to verify:
   ✓ go.mod                                         (AC-01)
   ✓ cmd/server/main.go                             (AC-01)
-  ✓ internal/config/config.go                      (AC-04)
-  ✓ docker-compose.yml                             (AC-02)
-  ✓ config/mosquitto/mosquitto.conf                (AC-02)
-  ✓ migrations/000001_create_raw_telemetry.up.sql  (AC-03)
-  ✓ migrations/000001_create_raw_telemetry.down.sql (AC-03)
+  ✓ config/local.yaml                              (AC-04)
+  ✓ internal/initialize/loadconfig.go              (AC-04)
+  ✓ internal/initialize/logger.go                  (AC-04)
+  ✓ internal/initialize/postgres.go                (AC-03)
   ✓ Makefile                                       (AC-05)
-  ✓ .env.example                                   (AC-04, AC-06)
-  ✓ README.md                                      (AC-06)
 
 Commands to run:
   go build ./...

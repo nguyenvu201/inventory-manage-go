@@ -44,7 +44,7 @@ Also update `docs/sprints/task_registry.md` — change the status column for thi
 ## Step 3 — Set Up the Development Environment
 
 ```bash
-# Start all infrastructure services
+# Start all infrastructure services (Postgres, Redis, MQTT)
 make docker-up
 
 # Verify all services are healthy
@@ -72,22 +72,24 @@ Work through ACs **in order**. For each AC:
 ### Project Structure Reminder
 
 ```
-cmd/server/main.go        ← entry point
+cmd/server/main.go        ← entry point (minimal, calls initialize.Run())
+config/local.yaml         ← configuration (Viper)
 internal/
-  domain/                 ← interfaces + entities (no external deps)
-  usecase/                ← business logic
+  model/                  ← models (no external deps)
+  service/impl/           ← business logic implementations
   repository/postgres/    ← DB implementations
-  handler/                ← HTTP handlers
+  controller/             ← Gin HTTP handlers
+  routers/                ← Gin router groups
   worker/                 ← background workers (MQTT, cron)
-  platform/               ← infra adapters (SMTP, FTP, MQTT)
 migrations/               ← golang-migrate SQL files
 ```
 
 ### Before writing any code, ask:
-- Which layer does this belong to? (domain / usecase / repository / handler)
-- Does the interface belong in `domain/`? (yes — always)
-- Am I about to hardcode a string? (no — use env var)
+- Which layer does this belong to? (model / service / repository / controller)
+- Does the interface belong in `service/interface.go`? (yes — always)
+- Am I about to hardcode a string? (no — use local.yaml / Config)
 - Am I ignoring an error? (no — always wrap with `fmt.Errorf`)
+- Am I checking for `global.Rdb != nil` before using Redis? (yes - always check)
 
 ---
 
@@ -110,6 +112,7 @@ make lint         # No vet/staticcheck warnings
 ```
 
 Coverage ≥ 80% for all business logic (use cases, domain services, validators).
+Make sure your gin controller tests use `httptest.NewRecorder()` and correctly mock services.
 
 ---
 
@@ -125,9 +128,9 @@ Coverage ≥ 80% for all business logic (use cases, domain services, validators)
 [ ] staticcheck ./... clean
 [ ] No hardcoded secrets
 [ ] Every error wrapped with fmt.Errorf("context: %w", err)
-[ ] Every log entry has device_id + trace_id
+[ ] Every log entry has device_id + trace_id, using global.Logger
 [ ] All DB tables have migration files
-[ ] Repository interfaces in domain/, not repository/
+[ ] Interfaces defined in service/, not repository/
 [ ] Unit test coverage ≥ 80% for business logic
 [ ] Integration tests written for repository layer
 ```
@@ -169,17 +172,6 @@ Types: `feat` | `fix` | `test` | `refactor` | `docs` | `chore`
 - Lead will update the task status to `🔒 CLOSED`
 - Move to the next `✅ APPROVED` task in the sprint
 - Check sprint dependency order before starting next sprint
-
----
-
-## Quick Reference — Sprint 1 Task Order
-
-```
-INV-SPR01-TASK-001  Setup Infrastructure          🔄 IN_PROGRESS  ← START HERE
-INV-SPR01-TASK-002  Gateway Message Receiver       ✅ APPROVED     (awaits TASK-001)
-INV-SPR01-TASK-003  Telemetry Validator & Parser   ✅ APPROVED     (awaits TASK-002)
-INV-SPR01-TASK-004  Raw Storage                    ✅ APPROVED     (awaits TASK-003)
-```
 
 ---
 

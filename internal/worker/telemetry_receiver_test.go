@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"inventory-manage/internal/domain/telemetry"
+	"inventory-manage/internal/model"
 	"inventory-manage/internal/worker"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ func TestReceiver_HandleMessage_ValidPayload(t *testing.T) {
 	// AC-04: Parse JSON payload, AC-05: Push to channel
 	processor := telemetry.NewProcessor()
 	validator := telemetry.NewValidator()
-	outChan := make(chan telemetry.TelemetryPayload, 1)
+	outChan := make(chan model.TelemetryPayload, 1)
 	receiver := worker.NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	validJSON := []byte(`{
@@ -33,7 +34,6 @@ func TestReceiver_HandleMessage_ValidPayload(t *testing.T) {
 		"txInfo": {"modulation": {"lora": {"spreadingFactor": 9}}}
 	}`)
 
-	// Mock message
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -59,7 +59,7 @@ func TestReceiver_HandleMessage_MissingFCnt(t *testing.T) {
 	// AC-09: Validate f_cnt field
 	processor := telemetry.NewProcessor()
 	validator := telemetry.NewValidator()
-	outChan := make(chan telemetry.TelemetryPayload, 1)
+	outChan := make(chan model.TelemetryPayload, 1)
 	receiver := worker.NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	invalidJSON := []byte(`{
@@ -74,7 +74,7 @@ func TestReceiver_HandleMessage_MissingFCnt(t *testing.T) {
 func TestReceiver_HandleMessage_Coverage(t *testing.T) {
 	processor := telemetry.NewProcessor()
 	validator := telemetry.NewValidator()
-	outChan := make(chan telemetry.TelemetryPayload, 1)
+	outChan := make(chan model.TelemetryPayload, 1)
 	receiver := worker.NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	// Missing Device ID
@@ -86,7 +86,6 @@ func TestReceiver_HandleMessage_Coverage(t *testing.T) {
 	require.Error(t, err, "should error on invalid json")
 
 	// Fallback Base64 Decoding Success
-	// Base64 for {Weight: 5000, Battery:85, SampleCount: 1} is 0x13, 0x88, 85, 1 -> "E4hVAQ=="
 	validFallbackJSON := []byte(`{
 		"deviceInfo": {"devEui": "SCALE-FALLBACK"},
 		"fCnt": 42,
@@ -106,17 +105,15 @@ func TestReceiver_HandleMessage_Coverage(t *testing.T) {
 }
 
 func TestReceiver_Start(t *testing.T) {
-	// mock mqtt client is tough without interface, but since we wrap it, Start() just calls subscribe.
-	// Since client.Subscribe requires token to wait and it uses real paho client inside the wrapper, 
-	// running Start without proper mocking will fail. Let's skip if we don't have a mocked interface.
-	// We've met the core business logic coverage criteria mostly via ProcessPayload.
+	// Skipped — requires real MQTT broker or a mocked interface.
+	// Business logic is covered via ProcessPayload tests above.
 }
 
 func TestReceiver_Timeout_Push(t *testing.T) {
 	processor := telemetry.NewProcessor()
 	validator := telemetry.NewValidator()
 	// Channel with 0 capacity will block immediately
-	outChan := make(chan telemetry.TelemetryPayload)
+	outChan := make(chan model.TelemetryPayload)
 	receiver := worker.NewTelemetryReceiver(nil, processor, validator, outChan)
 
 	validJSON := []byte(`{

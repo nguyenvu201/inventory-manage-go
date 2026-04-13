@@ -188,7 +188,7 @@ Sprint 1 → Sprint 2 → Sprint 3 → Sprint 4 → Sprint 5
 
 ## 9. Golang Best Practices (this project)
 
-- **Project layout:** `cmd/`, `internal/`, `pkg/`, `config/`
+- **Project layout:** `api/`, `cmd/`, `config/`, `docs/`, `internal/`, `migrations/`, `pkg/`, `scripts/`, `test/`, `web/`
 - **Error handling:** `fmt.Errorf("context: %w", err)` — never ignore errors
 - **Interfaces:** Define at the consumer side, not the implementation side
 - **Testing:** Table-driven tests for business logic

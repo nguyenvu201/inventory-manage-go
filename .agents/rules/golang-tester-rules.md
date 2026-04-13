@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 glob:
-description: Golang Tester Rules — Inventory Management System (IoT Scale)
+description: Golang Tester Rules — Inventory Management System (IoT Scale) - Gin + Wire + Zap + Viper
 ---
 
 # Golang Tester Rules — Inventory Management System
@@ -54,14 +54,15 @@ go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
 ```
 [ ] Error handling: every error wrapped with fmt.Errorf("context: %w", err)
 [ ] No error silently ignored (no _ = err or blank identifier)
-[ ] Every log entry has BOTH device_id AND trace_id fields
-[ ] No hardcoded values: no IPs, ports, passwords, API keys in source code
-[ ] No DB calls in handler layer (handlers call use cases only)
-[ ] No HTTP/network calls in domain or use case layer
-[ ] All interfaces defined in internal/domain/, not in repository/ or handler/
+[ ] Every log entry has BOTH device_id AND trace_id fields, using Zap logger
+[ ] No hardcoded values: config should use local.yaml via Config / Viper
+[ ] Controllers (Gin) only call Services, NO database/pgx calls in controller 
+[ ] No HTTP/network calls in model or service layer
+[ ] All interfaces defined in internal/service/interface.go, not in repository/
 [ ] All new DB tables accompanied by a migration file
 [ ] Migration file: both .up.sql and .down.sql exist and are correct
-[ ] No manual ALTER TABLE — only migration files
+[ ] No manual ALTER TABLE — only golang-migrate files
+[ ] Redis dependencies explicitly guarded with `if global.Rdb != nil`
 [ ] Concurrent shared state protected with sync.Mutex / sync.RWMutex or channels
 [ ] Context propagated through all function calls (no context.Background() in handlers)
 [ ] No goroutine leaks: all goroutines have a clear exit/cancel condition
@@ -73,8 +74,9 @@ go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
 [ ] Unit tests use table-driven format for all business logic
 [ ] Each test case has a descriptive name field
 [ ] Integration tests use testcontainers-go (no mocking the DB)
+[ ] Controller tests use httptest.NewRecorder() with gin.CreateTestContext()
 [ ] Tests do NOT share global state between test cases
-[ ] Test coverage ≥ 80% for: usecase/, domain/ service functions, validator logic
+[ ] Test coverage ≥ 80% for: service/ functions, model/ logic, validator logic
 [ ] Edge cases covered: zero values, max values, invalid input, missing deps
 [ ] No test sleeps (time.Sleep) — use channels or context timeouts instead
 [ ] Race detector passes: go test -race ./...

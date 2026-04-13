@@ -1,7 +1,7 @@
 ---
 trigger: always_on
 glob:
-description: Golang Developer Rules — Inventory Management System (IoT Scale)
+description: Golang Developer Rules — Inventory Management System (Gin + Wire + Zap + Viper)
 ---
 
 # Golang Developer Rules — Inventory Management System
@@ -13,14 +13,12 @@ Your role is to implement tasks assigned to you (`🔄 IN_PROGRESS`) following F
 
 ## 1. How to Find Your Work
 
-**Always start by reading your assigned task:**
-
 1. Open `docs/sprints/task_registry.md` — find tasks with status `🔄 IN_PROGRESS` assigned to `Developer`
-2. Open the corresponding sprint file (e.g., `docs/sprints/sprint_01_infrastructure_ingestion.md`)
-3. Read the full task: Description, all ACs, Related Technologies, Dependencies
-4. Do NOT start implementing until you have read **all** ACs
+2. Open the corresponding sprint file
+3. Read the **entire task block**: Description, all ACs, Related Technologies, Dependencies
+4. Do NOT start until you have read **all** ACs
 
-**Key rule:** Only implement tasks in `🔄 IN_PROGRESS` status. Do not self-assign `✅ APPROVED` tasks without Lead authorization.
+**Key rule:** Only implement tasks in `🔄 IN_PROGRESS` status.
 
 ---
 
@@ -30,41 +28,65 @@ Your role is to implement tasks assigned to you (`🔄 IN_PROGRESS`) following F
 project_inventory_manage/
 ├── cmd/
 │   └── server/
-│       └── main.go             ← Entry point
+│       └── main.go                ← Entry point (10 lines — calls initialize.Run())
+├── config/
+│   └── local.yaml                 ← YAML config (Viper)
+├── docs/                          ← Sprint docs, workflows (do NOT modify structure)
+├── global/
+│   └── global.go                  ← Singletons: Config, Logger, Pdb, Rdb
 ├── internal/
-│   ├── config/                 ← Config loader (env vars)
-│   ├── domain/                 ← Business entities / interfaces
-│   │   ├── telemetry/
-│   │   ├── device/
-│   │   ├── inventory/
-│   │   └── notification/
-│   ├── usecase/                ← Business logic (use cases)
-│   ├── repository/             ← DB implementations
-│   │   └── postgres/
-│   ├── handler/                ← HTTP handlers (REST)
-│   ├── middleware/             ← Auth, logging, recovery
-│   ├── worker/                 ← Background workers (MQTT, cron)
-│   └── platform/              ← Infrastructure adapters (FTP, SMTP, MQTT)
-├── pkg/                        ← Shared utilities (reusable across projects)
-├── migrations/                 ← SQL migration files (golang-migrate)
-├── config/                     ← Config structs / .env.example
-├── ui/                         ← Frontend static files (embed.FS)
-├── tests/
-│   ├── smoke/                  ← Smoke tests (app startup verification)
-│   ├── e2e/                    ← End-to-end flow tests
-│   └── testdata/               ← Shared test fixtures (JSON payloads, SQL seeds)
-├── docker-compose.yml
-├── docker-compose.test.yml     ← Test-specific compose (isolated containers)
-├── Makefile
-├── .env.example
-└── README.md
+│   ├── controller/                ← Gin HTTP handlers (*.controller.go)
+│   ├── domain/                    ← Legacy domain logic: validator, processor, decoder
+│   │   └── telemetry/             ← TelemetryPayload, Validator, Processor, Decoder
+│   ├── initialize/                ← Startup orchestration
+│   │   ├── run.go                 ← Run() — single entry point
+│   │   ├── loadconfig.go          ← Viper config loader
+│   │   ├── logger.go              ← Zap logger init
+│   │   ├── postgres.go            ← pgxpool init
+│   │   ├── redis.go               ← Redis client init (optional — graceful degradation)
+│   │   ├── mqtt.go                ← Paho MQTT client init
+│   │   └── router.go              ← Gin engine + DI wiring
+│   ├── middlewares/               ← Gin middlewares
+│   │   ├── logger.go              ← ZapLogger middleware
+│   │   └── request_id.go          ← RequestID / trace_id injector
+│   ├── model/                     ← Data structs (no external deps)
+│   │   ├── device.go
+│   │   ├── calibration.go
+│   │   └── telemetry.go
+│   ├── platform/
+│   │   └── mqtt/                  ← Paho MQTT client wrapper
+│   ├── repository/
+│   │   └── postgres/              ← DB implementations (pgx/v5 + squirrel)
+│   ├── routers/                   ← Route group registration
+│   │   ├── enter.go               ← RouterGroupApp singleton
+│   │   ├── device/                ← device.router.go
+│   │   └── calibration/           ← calibration.router.go
+│   ├── service/
+│   │   ├── interface.go           ← IDeviceService, ICalibrationService, IXxxRepository
+│   │   └── impl/                  ← Concrete service implementations
+│   └── worker/                    ← Background workers
+│       ├── telemetry_receiver.go  ← MQTT → channel
+│       └── storage_worker.go      ← channel → DB batch
+├── migrations/                    ← golang-migrate SQL files (up + down)
+├── pkg/
+│   ├── logger/
+│   │   └── logger.go              ← Zap + Lumberjack
+│   ├── response/
+│   │   ├── response.go            ← SuccessResponse / ErrorResponse helpers
+│   │   └── http_code.go           ← Business error code constants
+│   └── setting/
+│       └── section.go             ← Config structs (mapstructure tags)
+├── storages/
+│   └── logs/                      ← Rotating log files
+├── go.mod
+└── Makefile
 ```
 
 **Naming rules:**
-- Files: `snake_case.go` (e.g., `telemetry_repository.go`)
+- Files: `snake_case.go` for domain/repo/service, `name.controller.go` for controllers, `name.router.go` for routers
 - Test files: `xxx_test.go` in the same package
-- Packages: lowercase single word (e.g., `package telemetry`)
-- Interfaces: defined in `domain/` at the consumer side
+- Packages: lowercase single word
+- Interfaces: defined in `internal/service/interface.go` — **never** in repository
 
 ---
 
@@ -76,52 +98,82 @@ project_inventory_manage/
 // ✅ CORRECT
 result, err := repo.FindByID(ctx, id)
 if err != nil {
-    return fmt.Errorf("telemetry.FindByID: %w", err)
+    return fmt.Errorf("DeviceService.GetDevice: %w", err)
 }
 
-// ❌ WRONG — never do this
+// ❌ WRONG
 result, _ := repo.FindByID(ctx, id)
 ```
 
-Always wrap with context: `fmt.Errorf("package.Function: %w", err)`
+Always wrap: `fmt.Errorf("Package.FunctionName: %w", err)`
 
-### 3.2 Logging — zerolog with mandatory fields
+### 3.2 Logging — Zap with mandatory fields
 
 ```go
+// Import global logger
+import "inventory-manage/global"
+
 // Every log entry MUST include device_id and trace_id
-log.Info().
-    Str("device_id", payload.DeviceID).
-    Str("trace_id", ctx.Value("trace_id").(string)).
-    Float64("raw_weight", payload.RawWeight).
-    Msg("telemetry received")
+global.Logger.Info("telemetry received",
+    zap.String("device_id", payload.DeviceID),
+    zap.String("trace_id", c.GetString("trace_id")),
+    zap.Float64("raw_weight", payload.RawWeight),
+)
 
 // Error log
-log.Error().
-    Err(err).
-    Str("device_id", payload.DeviceID).
-    Str("trace_id", traceID).
-    Msg("failed to store telemetry")
+global.Logger.Error("failed to store telemetry",
+    zap.Error(err),
+    zap.String("device_id", payload.DeviceID),
+    zap.String("trace_id", traceID),
+)
 ```
 
-**Required fields for every log entry:** `device_id`, `trace_id`
+**Required fields for every log entry:** `device_id` (when applicable), `trace_id`
 
-### 3.3 Config — environment variables only
+#### Safe logger in tests (when global.Logger is nil):
 
 ```go
-// internal/config/config.go
-type Config struct {
-    DBHost     string `env:"DB_HOST,required"`
-    DBPort     int    `env:"DB_PORT" envDefault:"5432"`
-    MQTTBroker string `env:"MQTT_BROKER,required"`
+// In packages that may run before initialize.Run() (e.g., workers):
+func log() *zap.Logger {
+    if global.Logger != nil {
+        return global.Logger.Logger
+    }
+    return zap.NewNop()
 }
 ```
 
-**NEVER hardcode:** host, port, password, API key, DSN strings
+### 3.3 Config — YAML via Viper only
 
-### 3.4 Database — pgx/v5 with transactions
+```yaml
+# config/local.yaml
+server:
+  port: 8080
+  mode: dev
+postgres:
+  host: localhost
+  password: inventory_secret   # local dev only — never commit prod values
+```
 
 ```go
-tx, err := pool.Begin(ctx)
+// Access config via global.Config (type-safe struct)
+port := global.Config.Server.Port
+host := global.Config.Postgres.Host
+```
+
+**NEVER hardcode:** host, port, password, API key, DSN strings in source code.
+
+### 3.4 Database — pgx/v5 pool + squirrel
+
+```go
+// Always use global.Pdb (set by initialize.InitPostgres)
+import "inventory-manage/global"
+
+// Single query
+var d model.Device
+err = global.Pdb.QueryRow(ctx, query, args...).Scan(&d.DeviceID, ...)
+
+// Transaction — mandatory for multi-table operations
+tx, err := global.Pdb.Begin(ctx)
 if err != nil {
     return fmt.Errorf("db.Begin: %w", err)
 }
@@ -132,113 +184,169 @@ if err := tx.Commit(ctx); err != nil {
 }
 ```
 
-### 3.5 Concurrency — protect all shared state
+### 3.5 Redis — always check nil (optional dependency)
 
 ```go
-type Cache struct {
-    mu    sync.RWMutex
-    items map[string]Item
-}
-func (c *Cache) Set(key string, item Item) {
-    c.mu.Lock()
-    defer c.mu.Unlock()
-    c.items[key] = item
+// Redis is optional — service starts without it (degraded mode)
+if global.Rdb != nil {
+    val, err := global.Rdb.Get(ctx, key).Result()
+    if err != nil && !errors.Is(err, redis.Nil) {
+        global.Logger.Warn("redis get failed", zap.Error(err))
+    }
 }
 ```
 
-**Always run:** `go test -race ./...` before submitting PR
-
-### 3.6 HTTP Handler pattern (chi)
+### 3.6 Gin Controller Pattern
 
 ```go
-func (h *TelemetryHandler) GetCurrent(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()
-    traceID := middleware.TraceIDFromCtx(ctx)
-    result, err := h.usecase.GetCurrentInventory(ctx)
+// internal/controller/device.controller.go
+func (dc *DeviceController) GetDevice(c *gin.Context) {
+    // 1. Extract input
+    id := c.Param("id")
+    traceID := c.GetString("trace_id") // set by RequestID middleware
+
+    // 2. Call service
+    d, err := dc.deviceService.GetDevice(c.Request.Context(), id)
     if err != nil {
-        h.respond.Error(w, http.StatusInternalServerError, err, traceID)
+        if errors.Is(err, model.ErrDeviceNotFound) {
+            response.ErrorResponseWithHTTP(c, http.StatusNotFound,
+                response.ErrCodeDeviceNotFound, err.Error())
+            return
+        }
+        global.Logger.Error("GetDevice failed",
+            zap.String("device_id", id),
+            zap.String("trace_id", traceID),
+            zap.Error(err),
+        )
+        response.ErrorResponse(c, response.ErrCodeInternalServer, err.Error())
         return
     }
-    h.respond.JSON(w, http.StatusOK, result)
+
+    // 3. Return success
+    response.SuccessResponse(c, response.ErrCodeSuccess, d)
 }
 ```
 
-### 3.7 Migrations — golang-migrate only
+**Rules for controllers:**
+- Use `c.Request.Context()` — never `context.Background()` in handlers
+- Use `response.SuccessResponse` / `response.ErrorResponse` — never raw `c.JSON`
+- Never import `repository/` directly
 
-```bash
-migrate create -ext sql -dir migrations -seq create_raw_telemetry_table
+### 3.7 Response Helpers
+
+```go
+// pkg/response/response.go — use these everywhere
+response.SuccessResponse(c, response.ErrCodeSuccess, data)
+response.ErrorResponse(c, response.ErrCodeDeviceNotFound, "detail message")
+response.ErrorResponseWithHTTP(c, http.StatusNotFound, response.ErrCodeDeviceNotFound, "detail")
 ```
 
-Migration naming: `NNNNNN_description.up.sql` / `NNNNNN_description.down.sql`
+### 3.8 Service Layer Pattern
+
+```go
+// internal/service/impl/device_service.go
+type DeviceServiceImpl struct {
+    repo service.IDeviceRepository  // interface, not concrete type
+}
+
+func NewDeviceService(repo service.IDeviceRepository) service.IDeviceService {
+    return &DeviceServiceImpl{repo: repo}
+}
+
+func (s *DeviceServiceImpl) GetDevice(ctx context.Context, id string) (*model.Device, error) {
+    if id == "" {
+        return nil, fmt.Errorf("device_id is required")
+    }
+    d, err := s.repo.FindByID(ctx, id)
+    if err != nil {
+        return nil, fmt.Errorf("DeviceService.GetDevice: %w", err)
+    }
+    return d, nil
+}
+```
+
+### 3.9 Swagger Annotations
+
+All controller methods MUST have Swagger godoc comments:
+
+```go
+// GetDevice godoc
+//
+//  @Summary      Get a device by ID
+//  @Description  Returns the device with the given ID
+//  @Tags         devices
+//  @Produce      json
+//  @Param        id   path      string  true  "Device ID"
+//  @Success      200  {object}  response.ResponseData
+//  @Failure      404  {object}  response.ErrorResponseData
+//  @Router       /api/v1/devices/{id} [get]
+func (dc *DeviceController) GetDevice(c *gin.Context) { ... }
+```
+
+### 3.10 Migrations — golang-migrate only
+
+```bash
+migrate create -ext sql -dir migrations -seq create_xxx_table
+```
+
+Migration naming: `000001_description.up.sql` / `000001_description.down.sql`  
+**Never** use manual `ALTER TABLE` — always create a new migration file.
 
 ---
 
 ## 4. Testing Requirements (FDA IEC 62304 — Mandatory)
 
-> **FDA Rule:** Every task MUST have tests written BEFORE the task can be submitted for review.  
+> **FDA Rule:** Tests must be written BEFORE a task can be submitted for review.  
 > Tests are not optional — they are part of the AC definition.
 
-### 4.1 Test Traceability (FDA Requirement)
+### 4.1 Test Traceability Header (FDA Requirement)
 
-Every test file MUST have a header comment linking it to its Task ID:
+Every test file MUST start with:
 
 ```go
-// Package telemetry_test implements tests for INV-SPR01-TASK-003
+// Package xxx_test implements tests for INV-SPR01-TASK-003
 // AC Coverage:
-//   AC-01: TestTelemetryValidator_ValidPayload
-//   AC-02: TestTelemetryValidator_InvalidBattery
-//   AC-03: TestTelemetryValidator_DuplicateFCnt
+//   AC-01: TestDeviceService_RegisterDevice_Valid
+//   AC-02: TestDeviceService_RegisterDevice_MissingID
 // IEC 62304 Classification: Software Safety Class B
-package telemetry_test
+package xxx_test
 ```
 
-### 4.2 Unit Tests — `internal/**/*_test.go`
+### 4.2 Unit Tests (service, model, domain logic)
 
-**Mandatory for:** domain entities, validators, use case business logic, converters.
+**Pattern:** Table-driven ONLY — no individual test functions for business logic.
 
 ```go
-// Table-driven — the ONLY accepted format for business logic
-func TestTelemetryValidator_Validate(t *testing.T) {
-    // Link to task: INV-SPR01-TASK-003 / AC-01, AC-02
+func TestDeviceService_RegisterDevice(t *testing.T) {
+    // Link: INV-SPR02-TASK-001 / AC-01, AC-02, AC-03
     tests := []struct {
         name    string
-        input   TelemetryPayload
+        input   *model.Device
+        repoErr error
         wantErr bool
         errMsg  string
     }{
         {
-            name:  "AC-01: valid payload — all fields present and in range",
-            input: TelemetryPayload{DeviceID: "SCALE-001", RawWeight: 5000, BatteryLevel: 85, FCnt: ptr(uint32(1234))},
+            name:  "AC-01: valid device — all fields present",
+            input: &model.Device{DeviceID: "SCALE-001", SKUCode: "SKU-A", Status: model.StatusActive},
         },
         {
-            name:    "AC-02: battery_level=101 must be rejected",
-            input:   TelemetryPayload{DeviceID: "SCALE-001", RawWeight: 5000, BatteryLevel: 101},
-            wantErr: true, errMsg: "battery_level",
-        },
-        {
-            name:    "AC-02: battery_level=-1 must be rejected",
-            input:   TelemetryPayload{DeviceID: "SCALE-001", RawWeight: 5000, BatteryLevel: -1},
-            wantErr: true, errMsg: "battery_level",
-        },
-        {
-            name:  "AC-02: battery_level=0 (dead battery) must be accepted",
-            input: TelemetryPayload{DeviceID: "SCALE-001", RawWeight: 5000, BatteryLevel: 0},
-        },
-        {
-            name:    "empty device_id must be rejected",
-            input:   TelemetryPayload{DeviceID: "", RawWeight: 5000, BatteryLevel: 50},
+            name:    "AC-02: missing device_id must be rejected",
+            input:   &model.Device{SKUCode: "SKU-A", Status: model.StatusActive},
             wantErr: true, errMsg: "device_id",
         },
         {
-            name:    "negative raw_weight must be rejected",
-            input:   TelemetryPayload{DeviceID: "SCALE-001", RawWeight: -1, BatteryLevel: 50},
-            wantErr: true, errMsg: "raw_weight",
+            name:    "AC-03: invalid status must be rejected",
+            input:   &model.Device{DeviceID: "SCALE-001", SKUCode: "SKU-A", Status: "unknown"},
+            wantErr: true, errMsg: "invalid",
         },
     }
 
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
-            err := Validate(tt.input)
+            repo := &mockDeviceRepo{saveErr: tt.repoErr}
+            svc := impl.NewDeviceService(repo)
+            err := svc.RegisterDevice(context.Background(), tt.input)
             if tt.wantErr {
                 require.Error(t, err)
                 assert.Contains(t, err.Error(), tt.errMsg)
@@ -250,98 +358,120 @@ func TestTelemetryValidator_Validate(t *testing.T) {
 }
 ```
 
-**Required edge cases for EVERY validator:**
-- Zero values (`0`, `""`, `nil`)
-- Boundary values (`100`, `101`, `-1`)
-- Missing required fields
-- Maximum valid values
-
-### 4.3 Integration Tests — `internal/repository/postgres/*_test.go`
-
-**Mandatory for:** all repository implementations. Uses `testcontainers-go` — **NO mocking the DB**.
+### 4.3 Gin Controller Tests (httptest)
 
 ```go
-// integration_test.go
-// +build integration
+func TestDeviceController_GetDevice(t *testing.T) {
+    gin.SetMode(gin.TestMode)
 
-package postgres_test
-
-import (
-    "context"
-    "testing"
-    "github.com/testcontainers/testcontainers-go/modules/postgres"
-)
-
-// TestTelemetryRepository_Save covers INV-SPR01-TASK-004 / AC-01, AC-03
-func TestTelemetryRepository_Save(t *testing.T) {
-    if testing.Short() {
-        t.Skip("skipping integration test in short mode")
+    tests := []struct {
+        name       string
+        deviceID   string
+        svcReturn  *model.Device
+        svcErr     error
+        wantStatus int
+        wantCode   int
+    }{
+        {
+            name:       "AC-01: returns device when found",
+            deviceID:   "SCALE-001",
+            svcReturn:  &model.Device{DeviceID: "SCALE-001", Name: "Scale A"},
+            wantStatus: http.StatusOK,
+            wantCode:   response.ErrCodeSuccess,
+        },
+        {
+            name:       "AC-02: returns 404 when not found",
+            deviceID:   "SCALE-999",
+            svcErr:     model.ErrDeviceNotFound,
+            wantStatus: http.StatusNotFound,
+            wantCode:   response.ErrCodeDeviceNotFound,
+        },
     }
 
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            mockSvc := &mockDeviceService{device: tt.svcReturn, err: tt.svcErr}
+            ctrl := controller.NewDeviceController(mockSvc)
+
+            w := httptest.NewRecorder()
+            ctx, _ := gin.CreateTestContext(w)
+            ctx.Params = gin.Params{{Key: "id", Value: tt.deviceID}}
+            ctx.Request, _ = http.NewRequest(http.MethodGet, "/", nil)
+            ctx.Set("trace_id", "test-trace-123")
+
+            ctrl.GetDevice(ctx)
+
+            assert.Equal(t, tt.wantStatus, w.Code)
+            var body map[string]interface{}
+            json.Unmarshal(w.Body.Bytes(), &body)
+            assert.Equal(t, float64(tt.wantCode), body["code"])
+        })
+    }
+}
+```
+
+### 4.4 Integration Tests (Repository — testcontainers)
+
+```go
+//go:build integration
+
+// Package postgres_test implements tests for INV-SPR01-TASK-004
+package postgres_test
+
+func TestDeviceRepository_Save(t *testing.T) {
+    if testing.Short() {
+        t.Skip("skipping integration test")
+    }
     ctx := context.Background()
 
-    // Spin up real TimescaleDB container
-    pgContainer, err := postgres.RunContainer(ctx,
-        testcontainers.WithImage("timescale/timescaledb:latest-pg15"),
-        postgres.WithDatabase("test_inventory"),
-        postgres.WithUsername("test_user"),
-        postgres.WithPassword("test_pass"),
+    pgContainer, err := pgmodule.Run(ctx,
+        "timescale/timescaledb:latest-pg15",
+        pgmodule.WithDatabase("test_inventory"),
+        pgmodule.WithUsername("test_user"),
+        pgmodule.WithPassword("test_pass"),
     )
     require.NoError(t, err)
     t.Cleanup(func() { pgContainer.Terminate(ctx) })
 
-    // Run migrations
     connStr, _ := pgContainer.ConnectionString(ctx, "sslmode=disable")
     runMigrations(t, connStr)
 
-    repo := NewTelemetryRepository(connectDB(t, connStr))
+    pool := connectPool(t, connStr)
+    repo := postgres.NewDeviceRepository(pool)
 
-    t.Run("AC-01: save valid telemetry record", func(t *testing.T) {
-        record := &domain.RawTelemetry{
-            DeviceID:     "SCALE-001",
-            RawWeight:    5000.0,
-            BatteryLevel: 85,
-            FCnt:         ptr(uint32(1234)),
+    t.Run("AC-01: save valid device", func(t *testing.T) {
+        d := &model.Device{
+            DeviceID: "SCALE-001",
+            Name:     "Scale A",
+            SKUCode:  "SKU-A",
+            Status:   model.StatusActive,
         }
-        err := repo.Save(ctx, record)
+        err := repo.Save(ctx, d)
         require.NoError(t, err)
-        assert.NotZero(t, record.ID)
     })
 
-    t.Run("AC-03: duplicate f_cnt returns ErrDuplicate", func(t *testing.T) {
-        record := &domain.RawTelemetry{DeviceID: "SCALE-001", RawWeight: 5000, BatteryLevel: 85, FCnt: ptr(uint32(9999))}
-        require.NoError(t, repo.Save(ctx, record))
-
-        // Second insert with same f_cnt — must return idempotency error
-        err := repo.Save(ctx, record)
-        require.ErrorIs(t, err, ErrDuplicatePacket)
+    t.Run("AC-02: duplicate device_id returns ErrDuplicateDevice", func(t *testing.T) {
+        d := &model.Device{DeviceID: "SCALE-DUP", SKUCode: "SKU-A", Status: model.StatusActive}
+        require.NoError(t, repo.Save(ctx, d))
+        err := repo.Save(ctx, d)
+        require.ErrorIs(t, err, model.ErrDuplicateDevice)
     })
 }
 ```
 
-**Run integration tests:**
-```bash
-make test-integration       # go test ./... -tags integration -count=1
-```
-
-### 4.4 Smoke Tests — `tests/smoke/`
-
-**Purpose:** Verify the service starts, connects to dependencies, and core endpoints respond.  
-**Run:** After deployment or after `docker compose up`.
+### 4.5 Smoke Tests — `tests/smoke/`
 
 ```go
-// tests/smoke/smoke_test.go
-// Smoke tests for INV-SPR01-TASK-001 / AC-01 through AC-06
-// Requires: running docker compose environment
+//go:build smoke
+
+// Package smoke_test verifies service startup health.
 package smoke_test
 
 func TestSmoke_HealthEndpoint(t *testing.T) {
     baseURL := getEnv("BASE_URL", "http://localhost:8080")
-
     resp, err := http.Get(baseURL + "/health")
     require.NoError(t, err)
     defer resp.Body.Close()
-
     assert.Equal(t, http.StatusOK, resp.StatusCode)
 
     var body map[string]string
@@ -349,278 +479,191 @@ func TestSmoke_HealthEndpoint(t *testing.T) {
     assert.Equal(t, "ok", body["status"])
 }
 
-func TestSmoke_DatabaseConnectivity(t *testing.T) {
-    // Verify DB is reachable and raw_telemetry table exists
-    db := connectFromEnv(t)
-    var count int
-    err := db.QueryRow(context.Background(),
-        "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'raw_telemetry'",
-    ).Scan(&count)
-    require.NoError(t, err)
-    assert.Equal(t, 1, count, "raw_telemetry table must exist")
-}
-
-func TestSmoke_MQTTConnectivity(t *testing.T) {
-    // Verify MQTT broker accepts connections
-    opts := mqtt.NewClientOptions().
-        AddBroker(fmt.Sprintf("tcp://%s:%s", getEnv("MQTT_BROKER", "localhost"), getEnv("MQTT_PORT", "1883")))
-    client := mqtt.NewClient(opts)
-    token := client.Connect()
-    token.Wait()
-    require.NoError(t, token.Error())
-    defer client.Disconnect(250)
-    assert.True(t, client.IsConnected())
-}
-```
-
-**Run:**
-```bash
-make test-smoke             # go test ./tests/smoke/... -v -count=1
-```
-
-### 4.5 E2E Tests — `tests/e2e/`
-
-**Purpose:** Verify full system flows: MQTT message → ingestion → storage → API response.  
-**Requires:** Full docker compose environment running.
-
-```go
-// tests/e2e/ingestion_flow_test.go
-// E2E test for complete telemetry ingestion pipeline
-// Covers: INV-SPR01-TASK-002 + TASK-003 + TASK-004 (full ingestion chain)
-
-func TestE2E_TelemetryIngestionFlow(t *testing.T) {
-    if testing.Short() {
-        t.Skip("skipping E2E test — requires full docker environment")
-    }
-
-    ctx := context.Background()
-    db := connectDB(t)
-    mqttClient := connectMQTT(t)
-
-    deviceID := fmt.Sprintf("TEST-SCALE-%d", time.Now().UnixNano())
-    fcnt := uint32(42)
-
-    payload := map[string]any{
-        "deviceInfo": map[string]string{"devEui": deviceID},
-        "object": map[string]any{
-            "raw_weight":    5000.0,
-            "battery_level": 85,
-            "sample_count":  3,
-        },
-        "rxInfo": []map[string]any{{"rssi": -80, "snr": 7.5}},
-        "fCnt":   fcnt,
-    }
-
-    // Step 1: Publish MQTT uplink (simulates ChirpStack gateway)
-    payloadBytes, _ := json.Marshal(payload)
-    topic := fmt.Sprintf("application/1/device/%s/event/up", deviceID)
-    token := mqttClient.Publish(topic, 0, false, payloadBytes)
-    token.Wait()
-    require.NoError(t, token.Error())
-
-    // Step 2: Poll DB until record appears (max 5 seconds)
-    var record domain.RawTelemetry
-    require.Eventually(t, func() bool {
-        err := db.QueryRow(ctx,
-            "SELECT id, device_id, raw_weight, battery_level, f_cnt FROM raw_telemetry WHERE device_id = $1",
-            deviceID,
-        ).Scan(&record.ID, &record.DeviceID, &record.RawWeight, &record.BatteryLevel, &record.FCnt)
-        return err == nil
-    }, 5*time.Second, 200*time.Millisecond, "record should appear in DB within 5 seconds")
-
-    // Step 3: Verify stored data
-    assert.Equal(t, deviceID, record.DeviceID)
-    assert.InDelta(t, 5000.0, record.RawWeight, 0.001)
-    assert.Equal(t, int8(85), record.BatteryLevel)
-
-    // Step 4: Test idempotency — publish same f_cnt again
-    token = mqttClient.Publish(topic, 0, false, payloadBytes)
-    token.Wait()
-    time.Sleep(500 * time.Millisecond)
-
-    var count int
-    db.QueryRow(ctx,
-        "SELECT COUNT(*) FROM raw_telemetry WHERE device_id = $1 AND f_cnt = $2",
-        deviceID, fcnt,
-    ).Scan(&count)
-    assert.Equal(t, 1, count, "duplicate f_cnt packet must be discarded")
-
-    // Step 5: Verify API returns the record
-    resp, err := http.Get(fmt.Sprintf("http://localhost:8080/api/v1/telemetry?device_id=%s", deviceID))
+func TestSmoke_DevicesEndpoint(t *testing.T) {
+    resp, err := http.Get(getEnv("BASE_URL", "http://localhost:8080") + "/api/v1/devices")
     require.NoError(t, err)
     assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 ```
 
-**Run:**
-```bash
-make test-e2e               # go test ./tests/e2e/... -v -count=1 -timeout 120s
-```
-
-### 4.6 Regression Tests
-
-Regression tests protect previously verified behaviors. Add one after every bug fix.
+### 4.6 E2E Tests — `tests/e2e/`
 
 ```go
-// File: internal/domain/telemetry/regression_test.go
-// Regression: INV-SPR01-BUG-001 — double-averaging when sample_count > 1
-func TestRegression_NoDoubleAveraging_SampleCountGT1(t *testing.T) {
-    // When sample_count > 1, device already averaged — do NOT average again server-side
-    payload := TelemetryPayload{
-        RawWeight:   5000.0,
-        SampleCount: 3, // pre-averaged on node
+//go:build e2e
+
+// E2E test for complete telemetry ingestion pipeline
+// Covers: MQTT publish → ingestion → DB → API response
+func TestE2E_TelemetryIngestionFlow(t *testing.T) {
+    if testing.Short() {
+        t.Skip("requires full docker environment")
     }
-    result := ProcessWeight(payload)
-    assert.InDelta(t, 5000.0, result, 0.001, "raw_weight must be used as-is when sample_count > 1")
+    deviceID := fmt.Sprintf("TEST-SCALE-%d", time.Now().UnixNano())
+
+    // Step 1: Publish MQTT uplink
+    payload := buildChirpStackPayload(deviceID, 42, 5000.0, 85)
+    publishMQTT(t, fmt.Sprintf("application/1/device/%s/event/up", deviceID), payload)
+
+    // Step 2: Poll DB until record appears
+    db := connectDB(t)
+    var record model.RawTelemetry
+    require.Eventually(t, func() bool {
+        err := db.QueryRow(context.Background(),
+            "SELECT id, device_id, raw_weight FROM raw_telemetry WHERE device_id=$1", deviceID,
+        ).Scan(&record.ID, &record.DeviceID, &record.RawWeight)
+        return err == nil
+    }, 5*time.Second, 200*time.Millisecond)
+
+    // Step 3: Verify data
+    assert.Equal(t, deviceID, record.DeviceID)
+    assert.InDelta(t, 5000.0, record.RawWeight, 0.01)
+
+    // Step 4: Idempotency — same f_cnt again
+    publishMQTT(t, fmt.Sprintf("application/1/device/%s/event/up", deviceID), payload)
+    time.Sleep(500 * time.Millisecond)
+    var count int
+    db.QueryRow(context.Background(),
+        "SELECT COUNT(*) FROM raw_telemetry WHERE device_id=$1 AND f_cnt=42", deviceID,
+    ).Scan(&count)
+    assert.Equal(t, 1, count, "duplicate f_cnt must be discarded")
+
+    // Step 5: API response
+    resp, err := http.Get(fmt.Sprintf("http://localhost:8080/api/v1/devices"))
+    require.NoError(t, err)
+    assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 ```
 
 ### 4.7 Coverage Requirements (FDA Mandatory)
 
-| Package | Minimum Coverage |
-|---------|-----------------|
-| `internal/domain/` | ≥ 90% |
-| `internal/usecase/` | ≥ 85% |
-| `internal/repository/` | ≥ 80% (integration tests count) |
-| `internal/handler/` | ≥ 80% |
-| `internal/middleware/` | ≥ 75% |
-| `tests/smoke/` | 100% (all smoke tests must pass) |
+| Package | Minimum |
+|---------|---------|
+| `internal/service/impl/` | ≥ 85% |
+| `internal/model/` | ≥ 90% |
+| `internal/domain/telemetry/` | ≥ 90% |
+| `internal/repository/postgres/` | ≥ 80% (integration tests count) |
+| `internal/controller/` | ≥ 80% |
+| `internal/middlewares/` | ≥ 75% |
+| `tests/smoke/` | 100% (all must pass) |
 
-**Generate coverage report:**
 ```bash
-make test-cover
-# Creates: coverage.out + coverage.html
-# HTML report shows uncovered lines — QA will inspect these
+make test-cover    # generates coverage.out + coverage.html
 ```
 
-### 4.8 Test Organization per Test Type
+### 4.8 Test Command Matrix
 
-```
-Test Type       | Location                      | Tag            | Command
-─────────────── | ───────────────────────────── | ───────────── | ──────────────────────
-Unit            | internal/**/xxx_test.go        | (no tag)       | make test
-Integration     | internal/repository/**_test.go | //go:build integration | make test-integration
-Smoke           | tests/smoke/smoke_test.go      | //go:build smoke | make test-smoke
-E2E             | tests/e2e/**_test.go           | //go:build e2e  | make test-e2e
-Race detector   | all                            | (no tag)       | make test-race
-Coverage        | all                            | (no tag)       | make test-cover
-```
+| Type | Location | Build Tag | Command |
+|------|----------|-----------|---------|
+| Unit | `internal/**/*_test.go` | _(none)_ | `make test` |
+| Integration | `internal/repository/**_test.go` | `integration` | `make test-integration` |
+| Smoke | `tests/smoke/` | `smoke` | `make test-smoke` |
+| E2E | `tests/e2e/` | `e2e` | `make test-e2e` |
+| Race | all | _(none)_ | `make test-race` |
+| Coverage | all | _(none)_ | `make test-cover` |
 
 ---
 
-## 5. Task Status Update Rules (FDA Audit Trail)
+## 5. Task Status Update (FDA Audit Trail)
 
-When you **start** a task (`APPROVED → IN_PROGRESS`):
-
+**Start** (`APPROVED → IN_PROGRESS`):
 ```markdown
-| Date       | From     | To          | Performed by | Notes                    |
-|------------|----------|-------------|--------------|--------------------------|
-| YYYY-MM-DD | APPROVED | IN_PROGRESS | Developer    | Started implementation   |
+| Date       | From     | To          | Performed by | Notes                  |
+|------------|----------|-------------|--------------|------------------------|
+| YYYY-MM-DD | APPROVED | IN_PROGRESS | Developer    | Started implementation |
 ```
 
-When you **finish** (`IN_PROGRESS → IN_REVIEW`):
-
-1. Tick `[x]` for ALL Acceptance Criteria in the sprint file
-2. Change status header to `👀 IN_REVIEW`
-3. Add row: `IN_PROGRESS | IN_REVIEW | Developer | PR #XX — ACs + all tests passing`
+**Finish** (`IN_PROGRESS → IN_REVIEW`):
+1. Tick `[x]` for ALL ACs
+2. Change status → `👀 IN_REVIEW`
+3. Add row: `IN_PROGRESS | IN_REVIEW | Developer | PR #XX — all tests passing`
 4. Update `task_registry.md`
 
-**NEVER skip** updating the Status History table — this is the FDA audit trail.
+**NEVER delete** history rows — this is the FDA audit trail.
 
 ---
 
 ## 6. Pre-PR Self-Checklist
 
 ```
-── Implementation ───────────────────────────────────────────────────
-[ ] All ACs from the task are implemented and ticked [x]
-[ ] No hardcoded secrets or connection strings
-[ ] Every error is wrapped with fmt.Errorf("context: %w", err)
-[ ] Every log entry has device_id and trace_id fields
-[ ] All new DB tables have a migration file (up + down)
-[ ] Repository interfaces defined in domain/, not in repository/
+── Implementation ───────────────────────────────────────────────────────────
+[ ] All ACs ticked [x] in the sprint file
+[ ] No hardcoded secrets, DSN, or connection strings in source code
+[ ] Every error wrapped: fmt.Errorf("Package.Func: %w", err)
+[ ] Every log entry has device_id + trace_id fields
+[ ] All new DB tables have migration files (up + down)
+[ ] Service interfaces defined in service/interface.go — not in repository/
+[ ] Redis usage guarded with: if global.Rdb != nil { ... }
 
-── Tests (MANDATORY — FDA) ─────────────────────────────────────────
-[ ] Unit tests written for ALL business logic (validators, converters, use cases)
-[ ] Test file header has Task ID + AC coverage map
-[ ] Table-driven format used (not individual test functions)
-[ ] Integration tests written for repository layer (testcontainers)
-[ ] Smoke test added/updated in tests/smoke/ for new endpoints
+── Tests (MANDATORY — FDA) ──────────────────────────────────────────────────
+[ ] Unit tests: table-driven, header with Task ID + AC coverage map
+[ ] Controller tests: httptest.NewRecorder() + gin.CreateTestContext()
+[ ] Integration tests: testcontainers (real DB, no mock)
+[ ] Smoke test updated for any new endpoint
 [ ] E2E test written for new ingestion/processing flows
-[ ] Regression test added for any bug fix
+[ ] Regression test added after any bug fix
 
-── Quality Gates ────────────────────────────────────────────────────
-[ ] go test ./... passes
-[ ] go test -race -count=1 ./... passes (zero races)
-[ ] go vet ./... produces no warnings
-[ ] staticcheck ./... produces no warnings
-[ ] Coverage ≥ 80% for all new packages (90% for domain/)
-[ ] make test-smoke passes (services running)
+── Quality Gates ─────────────────────────────────────────────────────────────
+[ ] go build ./... → zero errors
+[ ] go vet ./...   → zero warnings
+[ ] go test ./...  → all pass
+[ ] go test -race -count=1 ./... → zero races
+[ ] Coverage ≥ 80% for all new packages (≥ 90% for model/ and domain/)
+[ ] make test-smoke → all pass (services running)
+[ ] Swagger annotations present on all controller methods
 ```
 
 ---
 
-## 7. Key Libraries — This Project
+## 7. Key Libraries
 
-| Purpose                | Library                          |
-|------------------------|----------------------------------|
-| HTTP Router            | `github.com/go-chi/chi/v5`       |
-| Database               | `github.com/jackc/pgx/v5`        |
-| Query Builder          | `github.com/Masterminds/squirrel`|
-| Migrations             | `github.com/golang-migrate/migrate/v4` |
-| MQTT Client            | `github.com/eclipse/paho.mqtt.golang` |
-| Config / Env           | `github.com/joho/godotenv` + `github.com/caarlos0/env/v11` |
-| Logging                | `github.com/rs/zerolog`          |
-| Scheduler              | `github.com/robfig/cron/v3`      |
-| Email                  | `gopkg.in/gomail.v2`             |
-| Testing assertions     | `github.com/stretchr/testify`    |
-| Integration tests      | `github.com/testcontainers/testcontainers-go` |
-| HTTP test server       | `net/http/httptest` (stdlib)     |
+| Purpose | Library |
+|---------|---------|
+| HTTP Framework | `github.com/gin-gonic/gin` |
+| Dependency Injection | `github.com/google/wire` |
+| Database Driver | `github.com/jackc/pgx/v5` |
+| Query Builder | `github.com/Masterminds/squirrel` |
+| Migrations | `github.com/golang-migrate/migrate/v4` |
+| MQTT Client | `github.com/eclipse/paho.mqtt.golang` |
+| Config | `github.com/spf13/viper` |
+| Logging | `go.uber.org/zap` + `github.com/natefinch/lumberjack` |
+| Cache | `github.com/redis/go-redis/v9` |
+| Swagger | `github.com/swaggo/gin-swagger` + `github.com/swaggo/swag` |
+| Testing assertions | `github.com/stretchr/testify` |
+| Integration tests | `github.com/testcontainers/testcontainers-go` |
+| HTTP test server | `net/http/httptest` (stdlib) |
 
 ---
 
-## 8. Sprint File Reference
+## 8. Domain Boundaries — Do Not Cross
 
-| File | Purpose |
-|------|---------|
-| `docs/sprints/task_registry.md` | Find your assigned tasks |
-| `docs/sprints/sprint_01_infrastructure_ingestion.md` | Sprint 1 tasks |
-| `docs/sprints/sprint_02_device_calibration.md` | Sprint 2 tasks |
-| `docs/sprints/sprint_03_inventory_rules_engine.md` | Sprint 3 tasks |
-| `docs/sprints/sprint_04_action_erp_integration.md` | Sprint 4 tasks |
-| `docs/sprints/sprint_05_optimization_failsafe.md` | Sprint 5 tasks |
+```
+Controller  →  Service (interface)  →  Repository (interface)  ←  Repository (impl)
+    ↑               ↑                          ↑
+ Gin only        No HTTP                 No HTTP / no Gin
+ No DB calls     No pgx                 pgx allowed here
+```
+
+- **Controller** must NOT import `repository/` or `pgx`
+- **Service** must NOT import `pgx`, `redis`, or any infra library
+- **Model** must have ZERO external dependencies
+- **Repository** implements `service.IXxxRepository` — does NOT define the interface
 
 ---
 
 ## 9. Makefile Commands
 
 ```bash
-make run              # Run the service locally
-make build            # Build binary
-make migrate          # Run all pending migrations (up)
-make migrate-down     # Roll back last migration
-make test             # go test ./... (unit tests only)
-make test-integration # go test -tags integration ./... (DB required)
-make test-smoke       # go test -tags smoke ./tests/smoke/... (all services up)
-make test-e2e         # go test -tags e2e ./tests/e2e/... (full env required)
+make run              # go run ./cmd/server/main.go (reads config/local.yaml)
+make build            # go build -o bin/server ./cmd/server/main.go
+make migrate          # golang-migrate up (reads DB DSN from .env or env vars)
+make migrate-down     # golang-migrate down 1
+make test             # go test ./... -short (unit tests only, no DB)
+make test-integration # go test -tags integration ./...
+make test-smoke       # go test -tags smoke ./tests/smoke/...
+make test-e2e         # go test -tags e2e ./tests/e2e/... -timeout 120s
 make test-race        # go test -race -count=1 ./...
-make test-cover       # Coverage report → coverage.html
+make test-cover       # coverage report → coverage.html
 make lint             # go vet + staticcheck
-make docker-up        # docker compose up -d (infra only)
+make swag             # swag init -g cmd/server/main.go (regenerate Swagger docs)
+make docker-up        # docker compose up -d
 make docker-down      # docker compose down
 ```
-
----
-
-## 10. Domain Boundaries — Do Not Cross
-
-```
-HTTP Handler  →  Use Case  →  Domain Interface  ←  Repository Implementation
-     ↑                ↑              ↑
- No DB calls      No HTTP       No HTTP, no DB
-```
-
-- **Handlers** must NOT import `repository/` directly
-- **Use cases** must NOT import `pgx` or any DB library
-- **Domain** must have ZERO external dependencies
-- **Repositories** implement domain interfaces — they do NOT define them
