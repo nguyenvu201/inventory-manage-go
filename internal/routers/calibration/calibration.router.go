@@ -15,5 +15,6 @@ func (rg *CalibrationRouterGroup) InitCalibrationRouter(r *gin.RouterGroup, cc *
 	{
 		calibGroup.POST("", cc.CreateCalibration)
 		calibGroup.GET("/:device_id/active", cc.GetActiveCalibration)
+		calibGroup.POST("/:device_id/update", cc.UpdateCalibration)
 	}
 }

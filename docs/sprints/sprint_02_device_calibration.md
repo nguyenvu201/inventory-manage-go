@@ -123,10 +123,10 @@
 ## [INV-SPR02-TASK-003] — Calibration Workflow
 
 > **Task ID:** `INV-SPR02-TASK-003`  
-> **Status:** 🔍 PENDING_REVIEW  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 2  
 
 **Description:** Implement the calibration update process for field installation and periodic checks, using database transactions to guarantee consistency.
@@ -150,13 +150,17 @@
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
 | 2026-04-13 | DRAFT| PENDING_REVIEW| BA   | Trình QA/Lead duyệt AC và luồng transaction |
+| 2026-04-13 | PENDING_REVIEW | IN_PROGRESS | Developer | Started implementation |
+| 2026-04-13 | IN_PROGRESS | IN_REVIEW | Developer | Đã viết xong Migration Trigger, Service Update API và UT. |
+| 2026-04-13 | IN_REVIEW | VERIFIED | QA | All ACs verified. Coverage >= 80%. All gates pass. |
+| 2026-04-13 | VERIFIED | CLOSED | Lead | Phê duyệt đóng task hoàn thiện |
 
 ---
 
 ## [INV-SPR02-TASK-004] — Audit Trail
 
 > **Task ID:** `INV-SPR02-TASK-004`  
-> **Status:** 📝 DRAFT  
+> **Status:** ✅ APPROVED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -182,6 +186,8 @@
 | Date       | From | To    | Performed by | Notes        |
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
+| 2026-04-13 | DRAFT | PENDING_REVIEW | BA | Trình QA/Lead duyệt AC cho Audit Trail |
+| 2026-04-13 | PENDING_REVIEW | APPROVED | Lead | AC rõ ràng và hợp lý, cho phép triển khai |
 
 ---
 

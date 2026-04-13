@@ -576,6 +576,7 @@ make test-cover    # generates coverage.out + coverage.html
 2. Change status → `👀 IN_REVIEW`
 3. Add row: `IN_PROGRESS | IN_REVIEW | Developer | PR #XX — all tests passing`
 4. Update `task_registry.md`
+5. **Call the Tester**: Ping `@[/golang-tester] please review task` in your final response to trigger the QA agent.
 
 **NEVER delete** history rows — this is the FDA audit trail.
 

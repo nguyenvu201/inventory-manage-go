@@ -72,3 +72,36 @@ func (cc *CalibrationController) GetActiveCalibration(c *gin.Context) {
 
 	response.SuccessResponse(c, response.ErrCodeSuccess, cfg)
 }
+
+// UpdateCalibration godoc
+//
+//	@Summary		Update / Add a new active calibration config for a device
+//	@Description	Deactivates the current config and creates a new one in a single transaction (initial, periodic, drift_correction)
+//	@Tags			calibration
+//	@Accept			json
+//	@Produce		json
+//	@Param			device_id	path		string							true	"Device ID"
+//	@Param			config		body		model.UpdateCalibrationParams	true	"Calibration update payload"
+//	@Success		200			{object}	response.ResponseData
+//	@Failure		400			{object}	response.ErrorResponseData
+//	@Router			/api/v1/calibrations/{device_id}/update [post]
+func (cc *CalibrationController) UpdateCalibration(c *gin.Context) {
+	deviceID := c.Param("device_id")
+	if deviceID == "" {
+		response.ErrorResponse(c, response.ErrCodeParamInvalid, "device_id is required")
+		return
+	}
+
+	var params model.UpdateCalibrationParams
+	if err := c.ShouldBindJSON(&params); err != nil {
+		response.ErrorResponse(c, response.ErrCodeParamInvalid, err.Error())
+		return
+	}
+
+	if err := cc.calibService.UpdateCalibration(c.Request.Context(), deviceID, &params); err != nil {
+		response.ErrorResponse(c, response.ErrCodeCalibrationInvalid, err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, response.ErrCodeSuccess, "Calibration updated successfully")
+}

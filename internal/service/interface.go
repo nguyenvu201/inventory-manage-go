@@ -25,6 +25,7 @@ type IDeviceService interface {
 type ICalibrationService interface {
 	RegisterCalibration(ctx context.Context, cfg *model.CalibrationConfig) error
 	GetActiveCalibration(ctx context.Context, deviceID string) (*model.CalibrationConfig, error)
+	UpdateCalibration(ctx context.Context, deviceID string, params *model.UpdateCalibrationParams) error
 }
 
 // ── Repository interfaces (defined here, implemented in repository/) ─────────
@@ -42,6 +43,7 @@ type IDeviceRepository interface {
 type ICalibrationRepository interface {
 	Save(ctx context.Context, cfg *model.CalibrationConfig) error
 	GetActive(ctx context.Context, deviceID string) (*model.CalibrationConfig, error)
+	UpdateCalibrationTx(ctx context.Context, deviceID string, config *model.CalibrationConfig) error
 }
 
 // ITelemetryRepository is the persistence contract for telemetry records.

@@ -147,6 +147,10 @@ Make sure your gin controller tests use `httptest.NewRecorder()` and correctly m
 
 Update `docs/sprints/task_registry.md` as well.
 
+### Ping QA Agent:
+At the very end of your response, you MUST ping the QA agent by writing:
+`@[/golang-tester] I have finished implementing the task and moved it to IN_REVIEW. Please check.`
+
 ### Commit convention:
 ```bash
 git add .

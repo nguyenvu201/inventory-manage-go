@@ -102,3 +102,58 @@ func (r *calibrationRepository) GetActive(ctx context.Context, deviceID string) 
 
 	return &c, nil
 }
+
+// UpdateCalibrationTx implements the 4 sequential steps for calibration updates in a single transaction.
+func (r *calibrationRepository) UpdateCalibrationTx(ctx context.Context, deviceID string, config *model.CalibrationConfig) error {
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Step 1: Verify and lock device to prevent orphaned records or concurrent races
+	var devID string
+	err = tx.QueryRow(ctx, "SELECT device_id FROM devices WHERE device_id = $1 FOR UPDATE", deviceID).Scan(&devID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("device verification: %w", model.ErrDeviceNotFound)
+		}
+		return fmt.Errorf("locking device: %w", err)
+	}
+
+	// Step 2: Retrieve and lock the current active configuration
+	var activeConfigID int
+	err = tx.QueryRow(ctx, "SELECT id FROM calibration_configs WHERE device_id = $1 AND deactivated_at IS NULL FOR UPDATE", deviceID).Scan(&activeConfigID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("locking active config: %w", err)
+	}
+
+	// Step 3: Deactivate old configuration if it exists
+	if activeConfigID > 0 {
+		_, err = tx.Exec(ctx, "UPDATE calibration_configs SET deactivated_at = NOW() WHERE id = $1", activeConfigID)
+		if err != nil {
+			return fmt.Errorf("deactivating old config: %w", err)
+		}
+	}
+
+	// Step 4: Insert new configuration
+	insertQ, insertArgs, err := r.psql.
+		Insert("calibration_configs").
+		Columns("device_id", "zero_value", "span_value", "unit", "capacity_max", "hardware_config", "calibration_type", "created_by").
+		Values(config.DeviceID, config.ZeroValue, config.SpanValue, config.Unit, config.CapacityMax, config.HardwareConfig, config.CalibrationType, config.CreatedBy).
+		Suffix("RETURNING id, effective_from, created_at").
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("building insert query: %w", err)
+	}
+
+	err = tx.QueryRow(ctx, insertQ, insertArgs...).Scan(&config.ID, &config.EffectiveFrom, &config.CreatedAt)
+	if err != nil {
+		return fmt.Errorf("inserting new config: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
+}
