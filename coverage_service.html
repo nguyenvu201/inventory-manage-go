@@ -1,0 +1,625 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>impl: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">inventory-manage/internal/service/impl/calibration_service.go (97.8%)</option>
+				
+				<option value="file1">inventory-manage/internal/service/impl/device_service.go (100.0%)</option>
+				
+				<option value="file2">inventory-manage/internal/service/impl/report_service.go (40.4%)</option>
+				
+				<option value="file3">inventory-manage/internal/service/impl/threshold_evaluator.go (86.8%)</option>
+				
+				<option value="file4">inventory-manage/internal/service/impl/threshold_service.go (88.2%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package impl
+
+import (
+        "context"
+        "fmt"
+
+        "inventory-manage/global"
+        "inventory-manage/internal/model"
+        "inventory-manage/internal/service"
+
+        "go.uber.org/zap"
+)
+
+// CalibrationServiceImpl is the concrete implementation of ICalibrationService.
+type CalibrationServiceImpl struct {
+        repo service.ICalibrationRepository
+}
+
+// NewCalibrationService creates a CalibrationServiceImpl.
+func NewCalibrationService(repo service.ICalibrationRepository) service.ICalibrationService <span class="cov8" title="1">{
+        return &amp;CalibrationServiceImpl{repo: repo}
+}</span>
+
+func (s *CalibrationServiceImpl) RegisterCalibration(ctx context.Context, cfg *model.CalibrationConfig) error <span class="cov8" title="1">{
+        if cfg.DeviceID == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("device_id is required")
+        }</span>
+        <span class="cov8" title="1">if cfg.ZeroValue &lt; 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("zero_value must be non-negative")
+        }</span>
+        <span class="cov8" title="1">if cfg.SpanValue &lt;= 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("span_value must be positive")
+        }</span>
+        <span class="cov8" title="1">if cfg.CapacityMax &lt;= 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("capacity_max must be positive")
+        }</span>
+
+        <span class="cov8" title="1">return s.repo.Save(ctx, cfg)</span>
+}
+
+func (s *CalibrationServiceImpl) GetActiveCalibration(ctx context.Context, deviceID string) (*model.CalibrationConfig, error) <span class="cov8" title="1">{
+        if deviceID == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("device_id is required")
+        }</span>
+        <span class="cov8" title="1">return s.repo.GetActive(ctx, deviceID)</span>
+}
+
+func (s *CalibrationServiceImpl) UpdateCalibration(ctx context.Context, deviceID string, params *model.UpdateCalibrationParams) error <span class="cov8" title="1">{
+        if deviceID == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("device_id is required")
+        }</span>
+        <span class="cov8" title="1">if params.ZeroValue &lt; 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("zero_value must be non-negative")
+        }</span>
+        <span class="cov8" title="1">if params.SpanValue &lt;= params.ZeroValue </span><span class="cov8" title="1">{
+                return fmt.Errorf("span_value must be strictly greater than zero_value")
+        }</span>
+        <span class="cov8" title="1">if params.CapacityMax &lt;= 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("capacity_max must be positive")
+        }</span>
+        
+        <span class="cov8" title="1">validUnits := map[string]bool{"kg": true, "g": true, "lb": true, "oz": true}
+        if !validUnits[params.Unit] </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid unit, must be one of: kg, g, lb, oz")
+        }</span>
+
+        <span class="cov8" title="1">validTypes := map[string]bool{
+                model.CalibrationTypeInitial:         true,
+                model.CalibrationTypePeriodic:        true,
+                model.CalibrationTypeDriftCorrection: true,
+        }
+        if !validTypes[params.CalibrationType] </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid calibration_type")
+        }</span>
+
+        <span class="cov8" title="1">cfg := &amp;model.CalibrationConfig{
+                DeviceID:       deviceID,
+                ZeroValue:      params.ZeroValue,
+                SpanValue:      params.SpanValue,
+                Unit:           params.Unit,
+                CapacityMax:    params.CapacityMax,
+                HardwareConfig: params.HardwareConfig,
+                CalibrationType: params.CalibrationType,
+                CreatedBy:      params.CreatedBy,
+        }
+
+        // Drift Detection (AC-05): Check if zero_value deviates significantly
+        oldActive, err := s.repo.GetActive(ctx, deviceID)
+        if err == nil &amp;&amp; oldActive != nil </span><span class="cov8" title="1">{
+                diff := float64(0)
+                if oldActive.ZeroValue &gt; 0 </span><span class="cov8" title="1">{
+                        diff = (params.ZeroValue - oldActive.ZeroValue) / oldActive.ZeroValue * 100.0
+                }</span> else<span class="cov8" title="1"> if params.ZeroValue &gt; 0 </span><span class="cov8" title="1">{
+                        diff = 100.0
+                }</span>
+                
+                <span class="cov8" title="1">if diff &lt; 0 </span><span class="cov8" title="1">{
+                        diff = -diff
+                }</span>
+                
+                // Threshold currently hardcoded to 5.0%
+                <span class="cov8" title="1">if diff &gt; 5.0 </span><span class="cov8" title="1">{
+                        // In FDA systems, we log/alert but DO NOT enforce hard-block unless specified. We will print the warning to Zap.
+                        if global.Logger != nil </span><span class="cov8" title="1">{
+                                global.Logger.Warn("calibration drift detected exceeding safe limits",
+                                        zap.String("device_id", deviceID),
+                                        zap.Float64("old_zero", oldActive.ZeroValue),
+                                        zap.Float64("new_zero", params.ZeroValue),
+                                        zap.Float64("drift_percentage", diff),
+                                )
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return s.repo.UpdateCalibrationTx(ctx, deviceID, cfg)</span>
+}
+
+func (s *CalibrationServiceImpl) GetAuditHistory(ctx context.Context, deviceID string, offset, limit uint64) ([]model.CalibrationAuditLog, error) <span class="cov8" title="1">{
+        if deviceID == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("device_id is required")
+        }</span>
+        <span class="cov8" title="1">if limit == 0 || limit &gt; 100 </span><span class="cov8" title="1">{
+                limit = 20
+        }</span>
+        <span class="cov8" title="1">return s.repo.GetAuditHistory(ctx, deviceID, offset, limit)</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package impl
+
+import (
+        "context"
+        "fmt"
+        "time"
+
+        "inventory-manage/internal/model"
+        "inventory-manage/internal/service"
+)
+
+// DeviceServiceImpl is the concrete implementation of IDeviceService.
+// It references the repository by its interface, not the concrete struct.
+type DeviceServiceImpl struct {
+        repo service.IDeviceRepository
+}
+
+// NewDeviceService creates a DeviceServiceImpl.
+// Wire will inject the IDeviceRepository implementation.
+func NewDeviceService(repo service.IDeviceRepository) service.IDeviceService <span class="cov8" title="1">{
+        return &amp;DeviceServiceImpl{repo: repo}
+}</span>
+
+func (s *DeviceServiceImpl) RegisterDevice(ctx context.Context, d *model.Device) error <span class="cov8" title="1">{
+        if d.DeviceID == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("device_id is required")
+        }</span>
+        <span class="cov8" title="1">if d.SKUCode == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("sku_code is required")
+        }</span>
+        <span class="cov8" title="1">if !d.IsValidStatus() </span><span class="cov8" title="1">{
+                return model.ErrInvalidStatus
+        }</span>
+
+        <span class="cov8" title="1">now := time.Now()
+        d.CreatedAt = now
+        d.UpdatedAt = now
+
+        return s.repo.Save(ctx, d)</span>
+}
+
+func (s *DeviceServiceImpl) GetDevice(ctx context.Context, id string) (*model.Device, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("device_id is required")
+        }</span>
+        <span class="cov8" title="1">return s.repo.FindByID(ctx, id)</span>
+}
+
+func (s *DeviceServiceImpl) ListDevices(ctx context.Context, q model.DeviceQuery) ([]*model.Device, error) <span class="cov8" title="1">{
+        return s.repo.FindAll(ctx, q)
+}</span>
+
+func (s *DeviceServiceImpl) UpdateDevice(ctx context.Context, d *model.Device) error <span class="cov8" title="1">{
+        if d.DeviceID == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("device_id is required")
+        }</span>
+        <span class="cov8" title="1">if !d.IsValidStatus() </span><span class="cov8" title="1">{
+                return model.ErrInvalidStatus
+        }</span>
+
+        <span class="cov8" title="1">existing, err := s.repo.FindByID(ctx, d.DeviceID)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("DeviceService.UpdateDevice: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">existing.Name = d.Name
+        if d.SKUCode != "" </span><span class="cov8" title="1">{
+                existing.SKUCode = d.SKUCode
+        }</span>
+        <span class="cov8" title="1">existing.Location = d.Location
+        existing.Status = d.Status
+        existing.UpdatedAt = time.Now()
+
+        return s.repo.Update(ctx, existing)</span>
+}
+
+func (s *DeviceServiceImpl) RemoveDevice(ctx context.Context, id string) error <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("device_id is required")
+        }</span>
+        <span class="cov8" title="1">return s.repo.Delete(ctx, id)</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package impl
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "time"
+
+        "github.com/redis/go-redis/v9"
+        "go.uber.org/zap"
+
+        "inventory-manage/global"
+        "inventory-manage/internal/model"
+        "inventory-manage/internal/service"
+)
+
+type ReportServiceImpl struct {
+        repo service.IReportRepository
+}
+
+func NewReportService(repo service.IReportRepository) service.IReportService <span class="cov8" title="1">{
+        return &amp;ReportServiceImpl{repo: repo}
+}</span>
+
+func (s *ReportServiceImpl) GetConsumptionTrend(ctx context.Context, query model.ConsumptionQuery) ([]*model.ConsumptionDataPoint, string, error) <span class="cov8" title="1">{
+        // Cache logic: cache if span &gt; 7 days
+        span := query.To.Sub(query.From)
+        useCache := span &gt; 7*24*time.Hour &amp;&amp; global.Rdb != nil
+
+        cacheKey := ""
+        if useCache </span><span class="cov0" title="0">{
+                cacheKey = fmt.Sprintf("reports:consumption:trend:%s:%d:%d:%s:%d:%s",
+                        query.SKUCode, query.From.Unix(), query.To.Unix(), query.Interval, query.Limit, query.Cursor)
+
+                val, err := global.Rdb.Get(ctx, cacheKey).Result()
+                if err == nil </span><span class="cov0" title="0">{
+                        var cached struct {
+                                Points     []*model.ConsumptionDataPoint `json:"points"`
+                                NextCursor string                        `json:"next_cursor"`
+                        }
+                        if unmarshalErr := json.Unmarshal([]byte(val), &amp;cached); unmarshalErr == nil </span><span class="cov0" title="0">{
+                                return cached.Points, cached.NextCursor, nil
+                        }</span>
+                } else<span class="cov0" title="0"> if err != redis.Nil </span><span class="cov0" title="0">{
+                        global.Logger.Warn("Failed to get cache for GetConsumptionTrend", zap.Error(err), zap.String("sku_code", query.SKUCode))
+                }</span>
+        }
+
+        <span class="cov8" title="1">points, err := s.repo.GetConsumptionTrend(ctx, query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("ReportService.GetConsumptionTrend: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">nextCursor := ""
+        if len(points) &gt; 0 &amp;&amp; query.Limit &gt; 0 &amp;&amp; len(points) == query.Limit </span><span class="cov0" title="0">{
+                // next cursor is the timestamp of the last item
+                nextCursor = points[len(points)-1].Timestamp.Format(time.RFC3339)
+        }</span>
+
+        <span class="cov8" title="1">if useCache </span><span class="cov0" title="0">{
+                cachedMap := map[string]interface{}{
+                        "points":      points,
+                        "next_cursor": nextCursor,
+                }
+                if bytes, err := json.Marshal(cachedMap); err == nil </span><span class="cov0" title="0">{
+                        errSet := global.Rdb.Set(ctx, cacheKey, bytes, 5*time.Minute).Err()
+                        if errSet != nil </span><span class="cov0" title="0">{
+                                global.Logger.Warn("Failed to set cache for GetConsumptionTrend", zap.Error(errSet))
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return points, nextCursor, nil</span>
+}
+
+func (s *ReportServiceImpl) GetConsumptionSummary(ctx context.Context, query model.ConsumptionQuery) (*model.ConsumptionSummary, error) <span class="cov8" title="1">{
+        span := query.To.Sub(query.From)
+        useCache := span &gt; 7*24*time.Hour &amp;&amp; global.Rdb != nil
+
+        cacheKey := ""
+        if useCache </span><span class="cov0" title="0">{
+                cacheKey = fmt.Sprintf("reports:consumption:summary:%s:%d:%d", query.SKUCode, query.From.Unix(), query.To.Unix())
+                val, err := global.Rdb.Get(ctx, cacheKey).Result()
+                if err == nil </span><span class="cov0" title="0">{
+                        var summary model.ConsumptionSummary
+                        if unmarshalErr := json.Unmarshal([]byte(val), &amp;summary); unmarshalErr == nil </span><span class="cov0" title="0">{
+                                return &amp;summary, nil
+                        }</span>
+                } else<span class="cov0" title="0"> if err != redis.Nil </span><span class="cov0" title="0">{
+                        global.Logger.Warn("Failed to get cache for GetConsumptionSummary", zap.Error(err))
+                }</span>
+        }
+
+        <span class="cov8" title="1">summary, err := s.repo.GetConsumptionSummary(ctx, query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("ReportService.GetConsumptionSummary: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">if useCache &amp;&amp; summary != nil </span><span class="cov0" title="0">{
+                if bytes, err := json.Marshal(summary); err == nil </span><span class="cov0" title="0">{
+                        errSet := global.Rdb.Set(ctx, cacheKey, bytes, 5*time.Minute).Err()
+                        if errSet != nil </span><span class="cov0" title="0">{
+                                global.Logger.Warn("Failed to set cache for GetConsumptionSummary", zap.Error(errSet))
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return summary, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package impl
+
+import (
+        "context"
+        "fmt"
+        "sync"
+        "time"
+
+        "inventory-manage/internal/model"
+        "inventory-manage/internal/service"
+        "inventory-manage/pkg/logger"
+
+        "go.uber.org/zap"
+)
+
+type thresholdEvaluator struct {
+        repo         service.IThresholdRepository
+        eventBus     model.IEventBus
+        logger       *logger.LoggerZap
+        cooldowns    sync.Map // key: skuCode_ruleType, value: time.Time
+}
+
+func NewThresholdEvaluator(repo service.IThresholdRepository, eventBus model.IEventBus, logger *logger.LoggerZap) service.IThresholdEvaluator <span class="cov8" title="1">{
+        return &amp;thresholdEvaluator{
+                repo:      repo,
+                eventBus:  eventBus,
+                logger:    logger,
+        }
+}</span>
+
+func (e *thresholdEvaluator) Evaluate(ctx context.Context, snapshot *model.InventorySnapshot) error <span class="cov8" title="1">{
+        rules, err := e.repo.FindBySKU(ctx, snapshot.SKUCode)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("ThresholdEvaluator.Evaluate: failed to find rules for sku %s: %w", snapshot.SKUCode, err)
+        }</span>
+
+        <span class="cov8" title="1">for _, rule := range rules </span><span class="cov8" title="1">{
+                if !rule.IsActive </span><span class="cov8" title="1">{
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">breached := false
+
+                // Check trigger conditions
+                if rule.TriggerPercentage != nil </span><span class="cov8" title="1">{
+                        switch rule.RuleType </span>{
+                        case model.RuleTypeLowStock, model.RuleTypeCritical:<span class="cov8" title="1">
+                                if snapshot.Percentage &lt;= *rule.TriggerPercentage </span><span class="cov8" title="1">{
+                                        breached = true
+                                }</span>
+                        case model.RuleTypeOverstock:<span class="cov0" title="0">
+                                if snapshot.Percentage &gt;= *rule.TriggerPercentage </span><span class="cov0" title="0">{
+                                        breached = true
+                                }</span>
+                        }
+                }
+
+                <span class="cov8" title="1">if rule.TriggerQty != nil &amp;&amp; !breached </span><span class="cov8" title="1">{
+                        switch rule.RuleType </span>{
+                        case model.RuleTypeLowStock, model.RuleTypeCritical:<span class="cov0" title="0">
+                                if snapshot.Qty &lt;= *rule.TriggerQty </span><span class="cov0" title="0">{
+                                        breached = true
+                                }</span>
+                        case model.RuleTypeOverstock:<span class="cov8" title="1">
+                                if snapshot.Qty &gt;= *rule.TriggerQty </span><span class="cov8" title="1">{
+                                        breached = true
+                                }</span>
+                        }
+                }
+
+                <span class="cov8" title="1">if breached </span><span class="cov8" title="1">{
+                        if e.isUnderCooldown(rule) </span><span class="cov8" title="1">{
+                                continue</span>
+                        }
+
+                        <span class="cov8" title="1">event := model.ThresholdBreachedEvent{
+                                EventID:           fmt.Sprintf("%s-%d", rule.SKUCode, time.Now().UnixNano()),
+                                DeviceID:          snapshot.DeviceID,
+                                SKUCode:           snapshot.SKUCode,
+                                RuleType:          rule.RuleType,
+                                CurrentPercentage: snapshot.Percentage,
+                                CurrentQty:        snapshot.Qty,
+                                Timestamp:         time.Now(),
+                        }
+
+                        if err := e.eventBus.Publish("threshold.breached", event); err != nil </span><span class="cov8" title="1">{
+                                if e.logger != nil </span><span class="cov0" title="0">{
+                                        e.logger.Error("failed to publish ThresholdBreachedEvent", zap.Error(err), zap.String("sku_code", snapshot.SKUCode))
+                                }</span>
+                        }
+
+                        <span class="cov8" title="1">e.setCooldown(rule)</span>
+                }
+        }
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (e *thresholdEvaluator) isUnderCooldown(rule *model.ThresholdRule) bool <span class="cov8" title="1">{
+        key := fmt.Sprintf("%s_%s", rule.SKUCode, rule.RuleType)
+        val, ok := e.cooldowns.Load(key)
+        if !ok </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">lastFired := val.(time.Time)
+        expiration := lastFired.Add(time.Duration(rule.CooldownMinutes) * time.Minute)
+        return time.Now().Before(expiration)</span>
+}
+
+func (e *thresholdEvaluator) setCooldown(rule *model.ThresholdRule) <span class="cov8" title="1">{
+        key := fmt.Sprintf("%s_%s", rule.SKUCode, rule.RuleType)
+        e.cooldowns.Store(key, time.Now())
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package impl
+
+import (
+        "context"
+        "fmt"
+        "inventory-manage/internal/model"
+        "inventory-manage/internal/service"
+)
+
+type thresholdService struct {
+        repo service.IThresholdRepository
+}
+
+func NewThresholdService(repo service.IThresholdRepository) service.IThresholdService <span class="cov8" title="1">{
+        return &amp;thresholdService{repo: repo}
+}</span>
+
+func (s *thresholdService) CreateRule(ctx context.Context, rule *model.ThresholdRule) error <span class="cov8" title="1">{
+        if rule.SKUCode == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("ThresholdService.CreateRule: sku_code is required")
+        }</span>
+        <span class="cov8" title="1">if rule.RuleType == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("ThresholdService.CreateRule: rule_type is required")
+        }</span>
+        <span class="cov8" title="1">if rule.TriggerPercentage == nil &amp;&amp; rule.TriggerQty == nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("ThresholdService.CreateRule: either trigger_percentage or trigger_qty must be specified")
+        }</span>
+        
+        <span class="cov8" title="1">err := s.repo.Save(ctx, rule)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("ThresholdService.CreateRule: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *thresholdService) GetRules(ctx context.Context, query model.ThresholdRuleQuery) ([]*model.ThresholdRule, error) <span class="cov8" title="1">{
+        rules, err := s.repo.FindAll(ctx, query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("ThresholdService.GetRules: %w", err)
+        }</span>
+        <span class="cov8" title="1">return rules, nil</span>
+}
+
+func (s *thresholdService) GetRuleByID(ctx context.Context, id string) (*model.ThresholdRule, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("ThresholdService.GetRuleByID: id is required")
+        }</span>
+        <span class="cov8" title="1">rule, err := s.repo.FindByID(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("ThresholdService.GetRuleByID: %w", err)
+        }</span>
+        <span class="cov8" title="1">return rule, nil</span>
+}
+
+func (s *thresholdService) UpdateRule(ctx context.Context, id string, rule *model.ThresholdRule) error <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("ThresholdService.UpdateRule: id is required")
+        }</span>
+        <span class="cov8" title="1">rule.ID = id
+        err := s.repo.Update(ctx, rule)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("ThresholdService.UpdateRule: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *thresholdService) DeleteRule(ctx context.Context, id string) error <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("ThresholdService.DeleteRule: id is required")
+        }</span>
+        <span class="cov8" title="1">err := s.repo.Delete(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("ThresholdService.DeleteRule: %w", err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

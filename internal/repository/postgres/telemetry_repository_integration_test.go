@@ -30,11 +30,11 @@ import (
 	migpg "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
-	"inventory-manage/internal/domain/telemetry"
+	"inventory-manage/internal/model"
 	"inventory-manage/internal/repository/postgres"
 )
 
-func runMigrations(t *testing.T, connStr string) {
+func runMigrations(t testing.TB, connStr string) {
 	// Locate migrations relative to test file execution
 	dir, err := os.Getwd()
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func runMigrations(t *testing.T, connStr string) {
 	}
 }
 
-func setupTestDB(t *testing.T) (*pgxpool.Pool, context.Context) {
+func setupTestDB(t testing.TB) (*pgxpool.Pool, context.Context) {
 	ctx := context.Background()
 
 	pgContainer, err := testpg.RunContainer(ctx,
@@ -114,14 +114,14 @@ func TestTelemetryRepository_Integration(t *testing.T) {
 	repo := postgres.NewTelemetryRepository(pool)
 
 	t.Run("AC-03: Save valid telemetry record", func(t *testing.T) {
-		record := &telemetry.RawTelemetry{
+		record := &model.RawTelemetry{
 			DeviceID:        "SCALE-INT-01",
 			RawWeight:       5000.0,
 			BatteryLevel:    85,
 			FCnt:            ptr(uint32(1001)),
-			RSSI:            ptr(int16(-75)),
-			SNR:             ptr(float32(8.5)),
-			SpreadingFactor: ptr(int8(9)),
+			RSSI:            -75,
+			SNR:             8.5,
+			SpreadingFactor: 9,
 			SampleCount:     1,
 			PayloadJSON:     []byte(`{"raw":true}`),
 			ReceivedAt:      time.Now(),
@@ -131,14 +131,14 @@ func TestTelemetryRepository_Integration(t *testing.T) {
 		assert.NotZero(t, record.ID)
 
 		// Verify retrieval
-		res, err := repo.FindByDeviceID(ctx, telemetry.TelemetryQuery{DeviceID: "SCALE-INT-01"})
+		res, err := repo.FindByDeviceID(ctx, model.TelemetryQuery{DeviceID: "SCALE-INT-01"})
 		require.NoError(t, err)
 		assert.Len(t, res, 1)
 		assert.Equal(t, float64(5000.0), res[0].RawWeight)
 	})
 
 	t.Run("AC-07: Duplicate f_cnt returns ErrDuplicatePacket", func(t *testing.T) {
-		record := &telemetry.RawTelemetry{
+		record := &model.RawTelemetry{
 			DeviceID:     "SCALE-INT-02",
 			RawWeight:    5000.0,
 			BatteryLevel: 85,
@@ -149,14 +149,14 @@ func TestTelemetryRepository_Integration(t *testing.T) {
 
 		// Second insert with same f_cnt must fail uniquely
 		err := repo.Save(ctx, record)
-		require.ErrorIs(t, err, telemetry.ErrDuplicatePacket)
+		require.ErrorIs(t, err, model.ErrDuplicatePacket)
 	})
 
 	t.Run("AC-04: Batch Insert and idempotency inside batch", func(t *testing.T) {
 		now := time.Now()
-		var batch []*telemetry.RawTelemetry
+		var batch []*model.RawTelemetry
 		for i := 0; i < 15; i++ {
-			batch = append(batch, &telemetry.RawTelemetry{
+			batch = append(batch, &model.RawTelemetry{
 				DeviceID:     "SCALE-BATCH",
 				RawWeight:    float64(10 * i),
 				BatteryLevel: int8(i),
@@ -168,16 +168,16 @@ func TestTelemetryRepository_Integration(t *testing.T) {
 		err := repo.SaveBatch(ctx, batch)
 		require.NoError(t, err)
 
-		results, err := repo.FindByDeviceID(ctx, telemetry.TelemetryQuery{DeviceID: "SCALE-BATCH"})
+		results, err := repo.FindByDeviceID(ctx, model.TelemetryQuery{DeviceID: "SCALE-BATCH"})
 		require.NoError(t, err)
 		assert.Len(t, results, 15)
 
 		// Test batch swallowing duplicates silently
-		duplicateBatch := []*telemetry.RawTelemetry{batch[0], batch[1]}
+		duplicateBatch := []*model.RawTelemetry{batch[0], batch[1]}
 		err = repo.SaveBatch(ctx, duplicateBatch)
 		require.NoError(t, err, "SaveBatch must silently discard uniqueness violations")
 		
-		postCount, _ := repo.FindByDeviceID(ctx, telemetry.TelemetryQuery{DeviceID: "SCALE-BATCH"})
+		postCount, _ := repo.FindByDeviceID(ctx, model.TelemetryQuery{DeviceID: "SCALE-BATCH"})
 		assert.Len(t, postCount, 15, "Count should not increase")
 	})
 }

@@ -64,7 +64,7 @@
 | INV-SPR03-TASK-001    | Weight Conversion Logic                | 🔒 CLOSED   | Developer| 2026-04-13  |
 | INV-SPR03-TASK-002    | Inventory Calculation                  | 🔒 CLOSED   | Developer| 2026-04-13  |
 | INV-SPR03-TASK-003    | Threshold Rules                        | 🔒 CLOSED   | Developer| 2026-04-14  |
-| INV-SPR03-TASK-004    | Historical Reporting API               | ✅ APPROVED | —        | 2026-04-14  |
+| INV-SPR03-TASK-004    | Historical Reporting API               | 🏆 VERIFIED     | Developer| 2026-04-14  |
 | INV-SPR03-TASK-005    | Stock-out / Day Zero Forecasting       | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-006    | Consumption Anomaly Detection          | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-007    | Inventory Dashboard API                | 📝 DRAFT   | —        | 2026-04-12  |

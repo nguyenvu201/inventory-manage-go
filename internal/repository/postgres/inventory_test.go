@@ -3,7 +3,6 @@
 package postgres_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -19,10 +18,7 @@ func TestInventoryRepository_EndToEnd(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	ctx := context.Background()
-	connStr := setupTestDB(t)
-
-	pool := connectPool(t, connStr)
+	pool, ctx := setupTestDB(t)
 	defer pool.Close()
 
 	repo := postgres.NewInventoryRepository(pool)

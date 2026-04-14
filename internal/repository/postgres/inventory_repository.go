@@ -21,9 +21,15 @@ func NewInventoryRepository(db *pgxpool.Pool) service.IInventoryRepository {
 	return &InventoryRepository{db: db}
 }
 
-// UpsertSnapshot updates or inserts a new inventory snapshot for the device.
+// UpsertSnapshot updates or inserts a new inventory snapshot for the device, and logs it to history.
 func (r *InventoryRepository) UpsertSnapshot(ctx context.Context, snapshot *model.InventorySnapshot) error {
-	query, args, err := sq.Insert("inventory_snapshots").
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("InventoryRepository.UpsertSnapshot begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	query1, args1, err := sq.Insert("inventory_snapshots").
 		Columns("device_id", "sku_code", "net_weight_kg", "qty", "percentage", "snapshot_at").
 		Values(snapshot.DeviceID, snapshot.SKUCode, snapshot.NetWeightKg, snapshot.Qty, snapshot.Percentage, sq.Expr("NOW()")).
 		Suffix("ON CONFLICT (device_id) DO UPDATE SET " +
@@ -36,12 +42,31 @@ func (r *InventoryRepository) UpsertSnapshot(ctx context.Context, snapshot *mode
 		ToSql()
 
 	if err != nil {
-		return fmt.Errorf("InventoryRepository.UpsertSnapshot build query: %w", err)
+		return fmt.Errorf("InventoryRepository.UpsertSnapshot build query 1: %w", err)
 	}
 
-	_, err = r.db.Exec(ctx, query, args...)
+	_, err = tx.Exec(ctx, query1, args1...)
 	if err != nil {
-		return fmt.Errorf("InventoryRepository.UpsertSnapshot exec: %w", err)
+		return fmt.Errorf("InventoryRepository.UpsertSnapshot exec 1: %w", err)
+	}
+
+	query2, args2, err := sq.Insert("inventory_history").
+		Columns("device_id", "sku_code", "net_weight_kg", "qty", "percentage", "snapshot_at").
+		Values(snapshot.DeviceID, snapshot.SKUCode, snapshot.NetWeightKg, snapshot.Qty, snapshot.Percentage, sq.Expr("NOW()")).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+
+	if err != nil {
+		return fmt.Errorf("InventoryRepository.UpsertSnapshot build query 2: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, query2, args2...)
+	if err != nil {
+		return fmt.Errorf("InventoryRepository.UpsertSnapshot exec 2: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("InventoryRepository.UpsertSnapshot commit: %w", err)
 	}
 
 	return nil

@@ -3,11 +3,13 @@
 package postgres_test
 
 import (
+	"inventory-manage/internal/model"
+)
+
+import (
 	"context"
 	"testing"
 	"time"
-
-	"inventory-manage/internal/domain/device"
 	"inventory-manage/internal/repository/postgres"
 
 	"github.com/stretchr/testify/assert"
@@ -31,12 +33,12 @@ func TestDeviceRepository_Integration(t *testing.T) {
 	pool.Exec(ctx, "TRUNCATE devices CASCADE")
 
 	t.Run("AC-02: Save new device", func(t *testing.T) {
-		d := &device.Device{
+		d := &model.Device{
 			DeviceID:  "DEV-001",
 			Name:      "Scale 1",
 			SKUCode:   "SKU-A",
 			Location:  "Warehouse A",
-			Status:    device.StatusActive,
+			Status:    model.StatusActive,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
@@ -52,50 +54,50 @@ func TestDeviceRepository_Integration(t *testing.T) {
 	})
 
 	t.Run("AC-06: Duplicate device ID returns ErrDuplicateDevice", func(t *testing.T) {
-		d := &device.Device{
+		d := &model.Device{
 			DeviceID:  "DEV-001", // duplicate
 			Name:      "Scale Duplicate",
 			SKUCode:   "SKU-B",
-			Status:    device.StatusActive,
+			Status:    model.StatusActive,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
 		err := repo.Save(ctx, d)
-		require.ErrorIs(t, err, device.ErrDuplicateDevice)
+		require.ErrorIs(t, err, model.ErrDuplicateDevice)
 	})
 
 	t.Run("AC-04: Find NotFound returns ErrDeviceNotFound", func(t *testing.T) {
 		_, err := repo.FindByID(ctx, "DEV-999")
-		require.ErrorIs(t, err, device.ErrDeviceNotFound)
+		require.ErrorIs(t, err, model.ErrDeviceNotFound)
 	})
 
 	t.Run("AC-03: FindAll with filters", func(t *testing.T) {
 		// Insert a second device
-		d2 := &device.Device{
+		d2 := &model.Device{
 			DeviceID:  "DEV-002",
 			Name:      "Scale 2",
 			SKUCode:   "SKU-B",
-			Status:    device.StatusInactive,
+			Status:    model.StatusInactive,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
 		require.NoError(t, repo.Save(ctx, d2))
 
 		// Find All
-		all, err := repo.FindAll(ctx, device.DeviceQuery{})
+		all, err := repo.FindAll(ctx, model.DeviceQuery{})
 		require.NoError(t, err)
 		assert.Len(t, all, 2)
 
 		// Find by Status
-		inactive := device.StatusInactive
-		filtered, err := repo.FindAll(ctx, device.DeviceQuery{Status: &inactive})
+		inactive := model.StatusInactive
+		filtered, err := repo.FindAll(ctx, model.DeviceQuery{Status: &inactive})
 		require.NoError(t, err)
 		assert.Len(t, filtered, 1)
 		assert.Equal(t, "DEV-002", filtered[0].DeviceID)
 
 		// Find by SKU
 		sku := "SKU-A"
-		filteredSKU, err := repo.FindAll(ctx, device.DeviceQuery{SKUCode: &sku})
+		filteredSKU, err := repo.FindAll(ctx, model.DeviceQuery{SKUCode: &sku})
 		require.NoError(t, err)
 		assert.Len(t, filteredSKU, 1)
 		assert.Equal(t, "DEV-001", filteredSKU[0].DeviceID)
@@ -106,14 +108,14 @@ func TestDeviceRepository_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		d.Name = "Scale 1 Updated"
-		d.Status = device.StatusMaintenance
+		d.Status = model.StatusMaintenance
 		err = repo.Update(ctx, d)
 		require.NoError(t, err)
 
 		updated, err := repo.FindByID(ctx, "DEV-001")
 		require.NoError(t, err)
 		assert.Equal(t, "Scale 1 Updated", updated.Name)
-		assert.Equal(t, device.StatusMaintenance, updated.Status)
+		assert.Equal(t, model.StatusMaintenance, updated.Status)
 	})
 
 	t.Run("AC-05: Delete device", func(t *testing.T) {
@@ -121,10 +123,10 @@ func TestDeviceRepository_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = repo.FindByID(ctx, "DEV-002")
-		require.ErrorIs(t, err, device.ErrDeviceNotFound)
+		require.ErrorIs(t, err, model.ErrDeviceNotFound)
 
 		// Delete non-existent
 		err = repo.Delete(ctx, "DEV-002")
-		require.ErrorIs(t, err, device.ErrDeviceNotFound)
+		require.ErrorIs(t, err, model.ErrDeviceNotFound)
 	})
 }

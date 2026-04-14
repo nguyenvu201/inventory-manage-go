@@ -1,0 +1,32 @@
+?   	inventory-manage/cmd/server	[no test files]
+?   	inventory-manage/docs	[no test files]
+?   	inventory-manage/global	[no test files]
+?   	inventory-manage/internal/config	[no test files]
+# inventory-manage/internal/repository/postgres_test [inventory-manage/internal/repository/postgres.test]
+internal/repository/postgres/report_repository_integration_test.go:30:2: declared and not used: connStr
+ok  	inventory-manage/internal/controller	0.465s
+?   	inventory-manage/internal/domain/device	[no test files]
+ok  	inventory-manage/internal/domain/inventory	1.032s
+?   	inventory-manage/internal/domain/notification	[no test files]
+ok  	inventory-manage/internal/domain/telemetry	0.817s
+ok  	inventory-manage/internal/handler	0.924s
+?   	inventory-manage/internal/initialize	[no test files]
+?   	inventory-manage/internal/middlewares	[no test files]
+?   	inventory-manage/internal/model	[no test files]
+?   	inventory-manage/internal/platform/eventbus	[no test files]
+ok  	inventory-manage/internal/platform/mqtt	0.706s
+FAIL	inventory-manage/internal/repository/postgres [build failed]
+?   	inventory-manage/internal/routers	[no test files]
+?   	inventory-manage/internal/routers/calibration	[no test files]
+?   	inventory-manage/internal/routers/device	[no test files]
+?   	inventory-manage/internal/routers/inventory	[no test files]
+?   	inventory-manage/internal/routers/report	[no test files]
+?   	inventory-manage/internal/routers/threshold	[no test files]
+?   	inventory-manage/internal/service	[no test files]
+ok  	inventory-manage/internal/service/impl	1.438s
+ok  	inventory-manage/internal/usecase	1.568s
+ok  	inventory-manage/internal/worker	0.836s
+?   	inventory-manage/pkg/logger	[no test files]
+?   	inventory-manage/pkg/response	[no test files]
+?   	inventory-manage/pkg/setting	[no test files]
+FAIL

@@ -89,3 +89,17 @@ type IThresholdRepository interface {
 	Update(ctx context.Context, rule *model.ThresholdRule) error
 	Delete(ctx context.Context, id string) error
 }
+
+// ── Reports ──────────────────────────────────────────────────────────────────
+
+// IReportService defines the contract for generating consumption reports
+type IReportService interface {
+	GetConsumptionTrend(ctx context.Context, query model.ConsumptionQuery) ([]*model.ConsumptionDataPoint, string, error)
+	GetConsumptionSummary(ctx context.Context, query model.ConsumptionQuery) (*model.ConsumptionSummary, error)
+}
+
+// IReportRepository is the persistence contract for querying historical inventory metadata
+type IReportRepository interface {
+	GetConsumptionTrend(ctx context.Context, query model.ConsumptionQuery) ([]*model.ConsumptionDataPoint, error)
+	GetConsumptionSummary(ctx context.Context, query model.ConsumptionQuery) (*model.ConsumptionSummary, error)
+}

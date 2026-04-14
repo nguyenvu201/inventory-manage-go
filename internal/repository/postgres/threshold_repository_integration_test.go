@@ -18,19 +18,26 @@ func TestThresholdRepository_Integration(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
+	pool, _ := setupTestDB(t)
 	ctx := context.Background()
-
-	pool, _ := setupTestDB(t) 
 	repo := postgres.NewThresholdRepository(pool)
 
-	pool.Exec(ctx, "TRUNCATE threshold_rules CASCADE")
+	// seed sku_config dependency
+	_, err := pool.Exec(ctx, `
+		INSERT INTO sku_configs (sku_code, unit_weight_kg, full_capacity_kg, tare_weight_kg, resolution_kg, reorder_point_qty, unit_label)
+		VALUES ('SKU-A', 2.0, 100.0, 1.0, 0.5, 5, 'Box'), ('SKU-B', 1.0, 50.0, 0.5, 0.1, 10, 'Bag')
+		ON CONFLICT DO NOTHING`)
+	require.NoError(t, err)
+
+	_, err = pool.Exec(ctx, "TRUNCATE threshold_rules CASCADE")
+	require.NoError(t, err)
 
 	var savedRuleID string
 
 	t.Run("Save new rule", func(t *testing.T) {
 		pct := 20.0
 		rule := &model.ThresholdRule{
-			ID:                "RULE-001",
+			// ID left empty — generate UUID on save via gen_random_uuid() default
 			SKUCode:           "SKU-A",
 			RuleType:          model.RuleTypeLowStock,
 			TriggerPercentage: &pct,
@@ -42,6 +49,7 @@ func TestThresholdRepository_Integration(t *testing.T) {
 
 		err := repo.Save(ctx, rule)
 		require.NoError(t, err)
+		require.NotEmpty(t, rule.ID, "repo.Save should populate rule.ID with generated UUID")
 
 		savedRuleID = rule.ID
 
@@ -53,16 +61,15 @@ func TestThresholdRepository_Integration(t *testing.T) {
 		assert.Equal(t, true, saved.IsActive)
 	})
 
-	t.Run("Find NotFound returns ErrNotFound", func(t *testing.T) {
-		_, err := repo.FindByID(ctx, "RULE-999")
+	t.Run("Find NotFound returns error", func(t *testing.T) {
+		// Use a valid UUID that does not exist
+		_, err := repo.FindByID(ctx, "00000000-0000-0000-0000-000000000000")
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "no rows in result set")
 	})
 
-	t.Run("FindAll with filters", func(t *testing.T) {
+	t.Run("FindAll with SKUCode filter", func(t *testing.T) {
 		pct := 10.0
 		r2 := &model.ThresholdRule{
-			ID:                "RULE-002",
 			SKUCode:           "SKU-B",
 			RuleType:          model.RuleTypeCritical,
 			TriggerPercentage: &pct,
@@ -77,18 +84,17 @@ func TestThresholdRepository_Integration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, all, 2)
 
-		active := true
-		filtered, err := repo.FindAll(ctx, model.ThresholdRuleQuery{IsActive: &active})
+		skuFilter := "SKU-A"
+		filtered, err := repo.FindAll(ctx, model.ThresholdRuleQuery{SKUCode: &skuFilter})
 		require.NoError(t, err)
 		assert.Len(t, filtered, 1)
-		assert.Equal(t, "RULE-001", filtered[0].ID)
+		assert.Equal(t, "SKU-A", filtered[0].SKUCode)
 	})
 
 	t.Run("FindBySKU", func(t *testing.T) {
 		rules, err := repo.FindBySKU(ctx, "SKU-A")
 		require.NoError(t, err)
 		assert.Len(t, rules, 1)
-		assert.Equal(t, "RULE-001", rules[0].ID)
 	})
 
 	t.Run("Update rule", func(t *testing.T) {

@@ -3,23 +3,27 @@
 package postgres_test
 
 import (
+	"inventory-manage/internal/model"
+)
+
+import (
 	"context"
 	"testing"
 	"time"
 
-	"inventory-manage/internal/domain/device"
+	"inventory-manage/internal/service"
 	"inventory-manage/internal/repository/postgres"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func prepareDeviceForCalibration(t *testing.T, repo device.DeviceRepository, devID string) {
-	err := repo.Save(context.Background(), &device.Device{
+func prepareDeviceForCalibration(t *testing.T, repo service.IDeviceRepository, devID string) {
+	err := repo.Save(context.Background(), &model.Device{
 		DeviceID: devID,
 		Name:     "Test Scale",
 		SKUCode:  "SKU-1",
-		Status:   device.StatusActive,
+		Status:   model.StatusActive,
 	})
 	require.NoError(t, err)
 }
@@ -29,7 +33,7 @@ func TestCalibrationRepository_SaveAndGetActive(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	dbPool := setupTestDB(t)
+	dbPool, _ := setupTestDB(t)
 	repo := postgres.NewCalibrationRepository(dbPool)
 	devRepo := postgres.NewDeviceRepository(dbPool)
 	ctx := context.Background()
@@ -38,7 +42,7 @@ func TestCalibrationRepository_SaveAndGetActive(t *testing.T) {
 	prepareDeviceForCalibration(t, devRepo, devID)
 
 	t.Run("Save initial config", func(t *testing.T) {
-		cfg := &device.CalibrationConfig{
+		cfg := &model.CalibrationConfig{
 			DeviceID:       devID,
 			ZeroValue:      0.01,
 			SpanValue:      500.0,
@@ -65,7 +69,7 @@ func TestCalibrationRepository_SaveAndGetActive(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create second
-		cfg2 := &device.CalibrationConfig{
+		cfg2 := &model.CalibrationConfig{
 			DeviceID:       devID,
 			ZeroValue:      0.02,
 			SpanValue:      501.0,
@@ -92,12 +96,13 @@ func TestCalibrationRepository_SaveAndGetActive(t *testing.T) {
 	})
 
 	t.Run("Foreign key violation", func(t *testing.T) {
-		cfg := &device.CalibrationConfig{
+		cfg := &model.CalibrationConfig{
 			DeviceID:    "NON-EXISTENT",
 			ZeroValue:   0,
 			SpanValue:   1,
 			Unit:        "kg",
 			CapacityMax: 10,
+			HardwareConfig: map[string]interface{}{"adc_rate": 80},
 			CreatedBy:   "admin",
 		}
 		err := repo.Save(ctx, cfg)

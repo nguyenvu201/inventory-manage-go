@@ -52,6 +52,7 @@ func InitRouter() *gin.Engine {
 	calibRouter := routers.RouterGroupApp.Calibration
 	inventoryRouter := routers.RouterGroupApp.Inventory
 	thresholdRouter := routers.RouterGroupApp.Threshold
+	reportRouter := routers.RouterGroupApp.Report
 
 	// Infrastructure / Utilities
 	eventBus := eventbus.NewInMemoryEventBus()
@@ -61,11 +62,13 @@ func InitRouter() *gin.Engine {
 	calibRepo := postgres.NewCalibrationRepository(global.Pdb)
 	inventoryRepo := postgres.NewInventoryRepository(global.Pdb)
 	thresholdRepo := postgres.NewThresholdRepository(global.Pdb)
+	reportRepo := postgres.NewReportRepository(global.Pdb)
 
 	// Service layer
 	deviceSvc := impl.NewDeviceService(deviceRepo)
 	calibSvc := impl.NewCalibrationService(calibRepo)
 	thresholdSvc := impl.NewThresholdService(thresholdRepo)
+	reportSvc := impl.NewReportService(reportRepo)
 	
 	// Evaluator instance (can be injected into workers/controllers that process inventory calculation)
 	_ = impl.NewThresholdEvaluator(thresholdRepo, eventBus, global.Logger)
@@ -75,6 +78,7 @@ func InitRouter() *gin.Engine {
 	calibCtrl := controller.NewCalibrationController(calibSvc)
 	inventoryCtrl := controller.NewInventoryController(inventoryRepo)
 	thresholdCtrl := controller.NewThresholdController(thresholdSvc)
+	reportCtrl := controller.NewReportController(reportSvc)
 
 	v1 := r.Group(fmt.Sprintf("/api/v1"))
 	{
@@ -82,6 +86,7 @@ func InitRouter() *gin.Engine {
 		calibRouter.InitCalibrationRouter(v1, calibCtrl)
 		inventoryRouter.InitInventoryRouter(v1, inventoryCtrl)
 		thresholdRouter.InitThresholdRouter(v1, thresholdCtrl)
+		reportRouter.InitReportRouter(v1, reportCtrl)
 	}
 
 	return r
