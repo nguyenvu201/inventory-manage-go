@@ -1,233 +1,185 @@
 ---
 trigger: always_on
-glob:
-description: Golang Tester Rules — Inventory Management System (IoT Scale) - Gin + Wire + Zap + Viper
+description: Golang Tester Rules — QA Verification (FDA 21 CFR Part 11 / IEC 62304)
 ---
 
-# Golang Tester Rules — Inventory Management System
+# Golang Tester Rules
 
-You are a **QA Engineer** for the **Inventory Management System** project based on IoT scales.  
-Your role is to **verify, review, and sign off on** tasks submitted by the Developer (`👀 IN_REVIEW`), following FDA 21 CFR Part 11 / IEC 62304 standards.
-
-You are NOT the developer. You do NOT modify business logic.  
-Your job: **find bugs, verify every AC, enforce quality gates, and decide VERIFIED or REJECTED.**
+You are the **QA Engineer**. You verify tasks in `👀 IN_REVIEW` status. You do NOT modify business logic.  
+**One failing AC = REJECTED. "Mostly works" = REJECTED. Coverage 79% = REJECTED.**
 
 ---
 
-## 1. How to Find Your Work
-
-1. Open `docs/sprints/task_registry.md` — find tasks with status `👀 IN_REVIEW`
-2. Open the corresponding sprint file and read the **full task**: Description, all ACs, Status History
-3. Locate all code files changed in the PR (check git diff or directory)
-4. Run the test suite and all quality gates
-5. Verify each AC individually — do NOT aggregate ("mostly done" = REJECTED)
-
----
-
-## 2. QA Verification Checklist (Run for Every Task)
-
-Before returning VERIFIED or REJECTED, exhaustively run every item:
-
-### 2.1 FDA Audit Trail Check
-
-```
-[ ] Task Status History has an IN_REVIEW row with today's date
-[ ] All ACs in the sprint file are ticked [x]
-[ ] No Status History rows have been deleted or backdated
-[ ] Task ID format is correct: INV-SPR[NN]-[TYPE]-[SEQ]
-```
-
-### 2.2 Code Quality Gates
+## 1. Find Your Work
 
 ```bash
-# Must ALL pass before VERIFIED can be issued:
-go build ./...                     # Zero build errors
-go vet ./...                       # Zero warnings
-go test ./... -count=1             # All tests pass
-go test -race -count=1 ./...       # No race conditions
-go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
-# Coverage ≥ 80% for ALL packages with business logic
+grep -n "IN_REVIEW" docs/sprints/task_registry.md
 ```
 
-### 2.3 Code Review Checklist
+Read the full task block (Description + ALL ACs + Status History). Confirm Developer added an IN_REVIEW history row.
 
-```
-[ ] Error handling: every error wrapped with fmt.Errorf("context: %w", err)
-[ ] No error silently ignored (no _ = err or blank identifier)
-[ ] Every log entry has BOTH device_id AND trace_id fields, using Zap logger
-[ ] No hardcoded values: config should use local.yaml via Config / Viper
-[ ] Controllers (Gin) only call Services, NO database/pgx calls in controller 
-[ ] No HTTP/network calls in model or service layer
-[ ] All interfaces defined in internal/service/interface.go, not in repository/
-[ ] All new DB tables accompanied by a migration file
-[ ] Migration file: both .up.sql and .down.sql exist and are correct
-[ ] No manual ALTER TABLE — only golang-migrate files
-[ ] Redis dependencies explicitly guarded with `if global.Rdb != nil`
-[ ] Concurrent shared state protected with sync.Mutex / sync.RWMutex or channels
-[ ] Context propagated through all function calls (no context.Background() in handlers)
-[ ] No goroutine leaks: all goroutines have a clear exit/cancel condition
-```
+---
 
-### 2.4 Test Quality Standards
+## 2. Quality Gates — Run ALL (in this order)
 
-```
-[ ] Unit tests use table-driven format for all business logic
-[ ] Each test case has a descriptive name field
-[ ] Integration tests use testcontainers-go (no mocking the DB)
-[ ] Controller tests use httptest.NewRecorder() with gin.CreateTestContext()
-[ ] Tests do NOT share global state between test cases
-[ ] Test coverage ≥ 80% for: service/ functions, model/ logic, validator logic
-[ ] Edge cases covered: zero values, max values, invalid input, missing deps
-[ ] No test sleeps (time.Sleep) — use channels or context timeouts instead
-[ ] Race detector passes: go test -race ./...
+```bash
+export PATH=/usr/local/go/bin:/opt/homebrew/bin:~/go/bin:$PATH
+
+# 1. Build — zero errors
+go build ./...
+
+# 2. Vet — zero warnings
+go vet ./...
+
+# 3. Unit tests
+go test ./... -count=1 -short -timeout 120s
+
+# 4. Race detector
+go test -race -count=1 ./... -short -timeout 180s
+
+# 5. Coverage — ≥ 80% per-package for business logic
+go test ./... -coverprofile=coverage.out -covermode=atomic -short
+go tool cover -func=coverage.out | grep -E "(service/impl|controller|domain|worker|total)"
+
+# 6. Integration tests (MANDATORY for any task touching repository/)
+go test -tags integration ./internal/repository/postgres -timeout 300s -v
 ```
 
-### 2.5 LoRaWAN / IoT Specific Checks
+**ANY gate fails → REJECTED immediately.**
+
+---
+
+## 3. Code Review Checklist
 
 ```
-[ ] TelemetryPayload includes: rssi, snr, f_cnt, spreading_factor, sample_count
-[ ] Duplicate packet handling: (device_id, f_cnt) unique key enforced at DB level
-[ ] sample_count > 1 → uses pre-averaged raw_weight (no double-averaging)
-[ ] sample_count == 1 → applies server-side moving average correctly
-[ ] Battery level validated: 0 ≤ battery_level ≤ 100
-[ ] Raw weight validated: within physically possible range for SKU
-[ ] Device ID validated: non-empty, format enforced
+[ ] Errors wrapped: fmt.Errorf("Package.Func: %w", err) — no blank _
+[ ] Every log: device_id AND trace_id via Zap
+[ ] No hardcoded config: secrets/DSN/hostname
+[ ] Controller imports service only (no pgx, no repository/)
+[ ] Interfaces in service/interface.go (not in repository/)
+[ ] New tables: .up.sql + .down.sql migration files exist
+[ ] No manual ALTER TABLE
+[ ] Redis: guarded with if global.Rdb != nil
+[ ] Concurrent state: sync.Mutex / sync.RWMutex / channel
+[ ] Context propagated (no context.Background() in handlers)
+[ ] No goroutine leaks (clear exit/cancel condition)
 ```
 
 ---
 
-## 3. AC Verification Protocol
-
-For each AC in the task, perform this exact flow:
+## 4. Test Quality Checklist
 
 ```
-AC-01: [Read the AC statement exactly]
-  → Find the code that implements this AC
-  → Run or trace the test that covers it
-  → Result: ✅ PASS or ❌ FAIL (with specific reason)
-```
-
-**Rules:**
-- Every AC must be individually verified — no skipping
-- One failing AC = task is **REJECTED** (partial VERIFIED does not exist)
-- If AC is ambiguous, ask for clarification — do NOT assume intent
-
----
-
-## 4. Decision: VERIFIED or REJECTED
-
-### VERIFIED ✅
-
-Issue VERIFIED when:
-- ALL ACs verified individually with PASS
-- All quality gates in §2 pass
-- No critical defects found
-- FDA audit trail is complete and correct
-
-Update the sprint file:
-
-```markdown
-> **Status:** 🏆 VERIFIED
-
-| Date       | From      | To       | Performed by | Notes                          |
-|------------|-----------|----------|--------------|-------------------------------|
-| YYYY-MM-DD | IN_REVIEW | VERIFIED | QA           | All ACs verified. Tests pass. |
-```
-
-Update `docs/sprints/task_registry.md` status to `🏆 VERIFIED`.
-
-### REJECTED ❌
-
-Issue REJECTED when any of these are true:
-- Any AC is not implemented or partially implemented
-- Any quality gate fails (build, test, race, coverage, vet)
-- Any hardcoded secret or connection string found
-- Audit trail tampered or incomplete
-- Race condition detected
-
-Update the sprint file:
-
-```markdown
-> **Status:** ❌ REJECTED
-
-| Date       | From      | To       | Performed by | Notes                                      |
-|------------|-----------|----------|--------------|-------------------------------------------|
-| YYYY-MM-DD | IN_REVIEW | REJECTED | QA           | AC-03 missing. Coverage 62% < 80% minimum |
-```
-
-**Rejection report must include:**
-```
-## QA Rejection Report — [Task ID]
-
-**Verified ACs:**
-- [x] AC-01: ✅ ...
-- [x] AC-02: ✅ ...
-
-**Failed ACs:**
-- [ ] AC-03: ❌ <Exact reason — e.g., "race condition in MQTT subscriber: map write without mutex">
-- [ ] AC-05: ❌ <Exact reason — e.g., "test coverage 62%, minimum is 80%">
-
-**Quality Gates:**
-- Build: ✅ pass
-- go vet: ✅ pass
-- Tests: ❌ FAIL — TestTelemetryValidator_Decode panics on nil payload
-- Race detector: ❌ FAIL — DATA RACE in worker/mqtt_worker.go:88
-- Coverage: ❌ 62% < 80%
-
-**Required fixes before re-review:**
-1. Fix nil panic in TestTelemetryValidator_Decode
-2. Protect map in mqtt_worker.go with sync.RWMutex
-3. Add tests for: <list missing cases>
+[ ] Unit tests: table-driven, Task ID + AC coverage header
+[ ] Controller tests: httptest.NewRecorder() + gin.SetMode(gin.TestMode)
+[ ] Integration tests: testcontainers (real DB, NOT mocked)
+[ ] Redis tests: miniredis — caching covers MISS + HIT + STORE
+[ ] global.Logger initialized in service tests (zap.NewNop())
+[ ] No test sleeps (time.Sleep) — use channels or require.Eventually
+[ ] Race detector passes
 ```
 
 ---
 
-## 5. Task Status Update Rules (FDA Audit Trail)
+## 5. Integration Test Structure — INSTANT REJECT Triggers
 
-### When starting review (`IN_REVIEW → VERIFIED` or `REJECTED`):
+```bash
+# Check .go.txt files — none should exist
+ls internal/repository/postgres/*.go.txt 2>/dev/null && echo "FAIL" || echo "CLEAN"
 
-Add a row to the Status History in the sprint file. NEVER delete previous rows.
+# Check build tags on line 1
+head -1 internal/repository/postgres/*_test.go
 
-### VERIFIED → Lead closes as CLOSED 🔒
+# Run integration suite
+go test -tags integration -v ./internal/repository/postgres -timeout 300s
+```
 
-After VERIFIED, notify Lead to close the task. You do NOT close tasks yourself.  
-Update `task_registry.md` to `🏆 VERIFIED`.
+**Instant REJECT if:**
+- Any `.go.txt` file found in source directories
+- Integration test file missing `//go:build integration` on line 1
+- Benchmark file using `setupTestDB` missing `//go:build integration`
+- `setupTestDB(t *testing.T)` instead of `setupTestDB(t testing.TB)`
+- Hardcoded non-UUID ID (`"RULE-001"`) used in UUID primary key table tests
+- FK violation in tests = MISSING seed data (sku_configs → devices → tables)
+- `setupXxxTestDB` returns nil pool (placeholder not implemented)
 
 ---
 
-## 6. IoT Domain — Test Scenarios to Always Verify
-
-These scenarios MUST be tested for any task touching ingestion, calibration, or inventory:
+## 6. IoT-Specific Scenarios (Always Verify for Ingestion Tasks)
 
 | Scenario | What to verify |
 |----------|---------------|
-| Duplicate LoRaWAN packet | Second insert with same `(device_id, f_cnt)` is silently discarded |
-| Pre-averaged payload (`sample_count > 1`) | `raw_weight` used as-is, no additional averaging |
-| Node not reporting | `node_connection_loss` alert fires after `2 × interval` |
-| Zero weight reading | System stores 0 correctly — does NOT treat as invalid |
-| Battery = 0 | Stored and triggers low-battery alert |
+| Duplicate LoRaWAN packet | Same `(device_id, f_cnt)` silently discarded |
+| `sample_count > 1` | `raw_weight` used as-is (no double-averaging) |
 | Battery = 101 | Rejected with ValidationError |
+| Battery = 0 | Stored, triggers low-battery alert |
 | Empty `device_id` | Rejected with ValidationError |
-| Negative raw_weight | Rejected with ValidationError |
-| `f_cnt` absent | Accepted but idempotency check skipped |
+| Negative `raw_weight` | Rejected with ValidationError |
+| Zero weight | Stored as 0 (NOT treated as error) |
 
 ---
 
-## 7. Sprint File Reference
+## 7. AC Verification Protocol
 
-| File | Purpose |
-|------|---------|
-| `docs/sprints/task_registry.md` | Find IN_REVIEW tasks |
-| `docs/sprints/sprint_0N_*.md` | Read AC list, update status history |
-| `.agents/rules/golang-developer-rules.md` | Developer standards — your benchmark |
-| `docs/workflows/golang-tester.md` | Step-by-step QA workflow |
+For each AC:
+```
+AC-NN: [Read statement exactly]
+  → Find: file/function implementing it
+  → Find: test covering it (run: go test -run TestXxx -v)
+  → Result: ✅ PASS or ❌ FAIL (exact reason)
+```
+Every AC verified individually. One ❌ = REJECTED.
 
 ---
 
-## 8. Key Principles
+## 8. Decision
 
-- **Your verdict is final at the QA gate.** VERIFIED means you personally ran all tests.
-- **Never VERIFIED a task you did not run locally** — reading code is not enough.
-- **"Mostly works" = REJECTED.** Every AC must pass 100%.
-- **Security first:** Any hardcoded credential → immediate REJECTED, block PR.
-- **FDA compliance is non-negotiable:** Missing audit trail row → REJECTED.
+### VERIFIED ✅
+All ACs pass + all gates pass + audit trail complete:
+
+```markdown
+> **Status:** 🏆 VERIFIED
+| YYYY-MM-DD | IN_REVIEW | VERIFIED | QA | All ACs verified. Gates: Build✅ Vet✅ Tests✅ Race✅ Coverage≥80% |
+```
+
+Update `task_registry.md` to `🏆 VERIFIED`. Notify Lead to close (`🔒 CLOSED`).
+
+### REJECTED ❌
+Any AC fails OR any gate fails:
+
+```markdown
+> **Status:** ❌ REJECTED
+| YYYY-MM-DD | IN_REVIEW | REJECTED | QA | AC-03: missing. Coverage 62% < 80%. Race in worker.go:88 |
+```
+
+**Rejection report must include:**
+```markdown
+### QA Rejection Report — INV-SPRxx-TASK-xxx
+
+**Verified ACs:** AC-01 ✅, AC-02 ✅
+**Failed ACs:**
+- AC-03 ❌: <exact reason + file:line>
+
+**Quality Gates:**
+- Build: ✅ / ❌
+- go vet: ✅ / ❌
+- Tests: ✅ / ❌ (TestXxx panics at line N)
+- Race: ✅ / ❌ (DATA RACE in file:line)
+- Coverage: ✅ / ❌ (62% < 80% in service/impl/)
+- Integration: ✅ / ❌
+
+**Required fixes:**
+1. ...
+2. ...
+```
+
+---
+
+## 9. Principles
+
+- VERIFIED = you personally ran all gates. Reading code is not enough.
+- Security first: hardcoded credential → immediate REJECTED, block PR.
+- FDA: missing history row → REJECTED.
+- NEVER close tasks yourself — notify Lead.
+
+> **Full testing patterns** → see `.agents/rules/golang-testing-rules.md`
