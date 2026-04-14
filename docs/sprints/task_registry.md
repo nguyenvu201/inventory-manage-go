@@ -63,16 +63,17 @@
 |-----------------------|----------------------------------------|------------|----------|-------------|
 | INV-SPR03-TASK-001    | Weight Conversion Logic                | 🔒 CLOSED   | Developer| 2026-04-13  |
 | INV-SPR03-TASK-002    | Inventory Calculation                  | 🔒 CLOSED   | Developer| 2026-04-13  |
-| INV-SPR03-TASK-003    | Threshold Rules                        | ✅ APPROVED | —        | 2026-04-13  |
-| INV-SPR03-TASK-004    | Historical Reporting API               | 📝 DRAFT   | —        | 2026-04-12  |
+| INV-SPR03-TASK-003    | Threshold Rules                        | 🔒 CLOSED   | Developer| 2026-04-14  |
+| INV-SPR03-TASK-004    | Historical Reporting API               | ✅ APPROVED | —        | 2026-04-14  |
 | INV-SPR03-TASK-005    | Stock-out / Day Zero Forecasting       | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-006    | Consumption Anomaly Detection          | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-007    | Inventory Dashboard API                | 📝 DRAFT   | —        | 2026-04-12  |
+| INV-SPR03-TASK-008    | Traefik API Gateway Integration        | 🔍 PENDING_REVIEW | — | 2026-04-14  |
 
 > **Amended tasks:** TASK-001 (AC-08 added) — customer PDF Rev 2  
 > **New tasks:** TASK-005, TASK-006, TASK-007 — customer PDF Rev 2
 
-**Sprint 3 Status:** 🔄 In Progress | Tasks: 7 total / 1 done
+**Sprint 3 Status:** 🔄 In Progress | Tasks: 8 total / 1 done
 
 ---
 
@@ -116,7 +117,7 @@
 |----------|-------|-------|-------------|----------|--------|
 | Sprint 1 | 4     | 0     | 0           | 0        | 4      |
 | Sprint 2 | 4     | 3     | 0           | 1        | 0      |
-| Sprint 3 | 7     | 7     | 0           | 0        | 0      |
+| Sprint 3 | 8     | 4     | 0           | 0        | 2      |
 | Sprint 4 | 6     | 6     | 0           | 0        | 0      |
 | Sprint 5 | 5     | 5     | 0           | 0        | 0      |
 | **Total**| **26**| **26**| **0**       | **0**    | **0**  |
@@ -130,6 +131,7 @@
 | 1   | 2026-04-12 | BA         | Initial registry — 20 tasks across 5 sprints                     |
 | 2   | 2026-04-12 | BA         | +6 new tasks, +5 amended tasks based on customer PDF requirement |
 | 3   | 2026-04-13 | BA         | Sprint 1 Closed. Sprint 2 Started.                               |
+| 4   | 2026-04-14 | BA         | Added TASK-008 (Traefik integration) to Sprint 3                 |
 
 ---
 

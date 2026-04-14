@@ -4,6 +4,7 @@ import (
 	calibrationrouter "inventory-manage/internal/routers/calibration"
 	devicerouter "inventory-manage/internal/routers/device"
 	inventoryrouter "inventory-manage/internal/routers/inventory"
+	thresholdrouter "inventory-manage/internal/routers/threshold"
 )
 
 // RouterGroup aggregates all domain route groups.
@@ -12,6 +13,7 @@ type RouterGroup struct {
 	Device      devicerouter.DeviceRouterGroup
 	Calibration calibrationrouter.CalibrationRouterGroup
 	Inventory   inventoryrouter.InventoryRouter
+	Threshold   thresholdrouter.ThresholdRouter
 }
 
 // RouterGroupApp is the singleton router group used in initialize/router.go.

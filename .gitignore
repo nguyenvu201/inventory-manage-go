@@ -16,3 +16,4 @@ coverage.html
 
 # Go build cache
 vendor/
+.gitnexus

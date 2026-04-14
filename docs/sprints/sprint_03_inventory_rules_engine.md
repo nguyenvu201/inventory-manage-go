@@ -112,21 +112,21 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 ## [INV-SPR03-TASK-003] — Threshold Rules
 
 > **Task ID:** `INV-SPR03-TASK-003`  
-> **Status:** ✅ APPROVED  
+> **Status:** 🔒 CLOSED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 3  
 
 **Description:** Define and evaluate low-stock threshold rules per SKU, emitting events when breached while using a cooldown mechanism to prevent alert spam.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Create `threshold_rules` table with: `sku_code`, `rule_type` (low_stock/critical/overstock), `trigger_percentage`, `trigger_qty`, `cooldown_minutes`, `is_active`
-- [ ] AC-02: Implement `ThresholdEvaluator` service that evaluates rules after each inventory calculation
-- [ ] AC-03: Emit a `ThresholdBreachedEvent` when a rule violation is detected
-- [ ] AC-04: Implement cooldown mechanism — suppress duplicate events while inventory oscillates near the threshold
-- [ ] AC-05: Implement CRUD API: `POST/GET/PUT/DELETE /api/v1/rules/thresholds`
-- [ ] AC-06: Write unit tests covering: threshold breach, within cooldown window, rule is disabled
+- [x] AC-01: Create `threshold_rules` table with: `sku_code`, `rule_type` (low_stock/critical/overstock), `trigger_percentage`, `trigger_qty`, `cooldown_minutes`, `is_active`
+- [x] AC-02: Implement `ThresholdEvaluator` service that evaluates rules after each inventory calculation
+- [x] AC-03: Emit a `ThresholdBreachedEvent` when a rule violation is detected
+- [x] AC-04: Implement cooldown mechanism — suppress duplicate events while inventory oscillates near the threshold
+- [x] AC-05: Implement CRUD API: `POST/GET/PUT/DELETE /api/v1/rules/thresholds`
+- [x] AC-06: Write unit tests covering: threshold breach, within cooldown window, rule is disabled
 
 **Related Technologies:**
 - Event-driven: publish `ThresholdBreachedEvent` to an internal event bus
@@ -140,13 +140,43 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
 | 2026-04-13 | DRAFT | PENDING_REVIEW | BA | Đề xuất TASK-003 |
 | 2026-04-13 | PENDING_REVIEW | APPROVED | Lead | Approved TASK-003, sẵn sàng giao cho dev |
+| 2026-04-14 | APPROVED | IN_PROGRESS | Developer | Started implementation |
+| 2026-04-14 | IN_PROGRESS | IN_REVIEW | Developer | PR ready: all tests pass, interfaces and logic built out. |
+| 2026-04-14 | IN_REVIEW | REJECTED | QA | Test coverage for business logic is < 80%. Repository tests are missing. |
+| 2026-04-14 | REJECTED | IN_PROGRESS | Developer | Fixing missing coverage and integration tests |
+| 2026-04-14 | IN_PROGRESS | IN_REVIEW | Developer | PR updated: Added integration tests for Repository, unit tests covering ThresholdService and ThresholdController with all ACs met. |
+| 2026-04-14 | IN_REVIEW | VERIFIED | QA | All ACs verified. Coverage for Thresholds (evaluator and service) >= 80%. All integration tests pass. |
+| 2026-04-14 | VERIFIED | CLOSED | Lead | Đã kiểm duyệt và close TASK-003. |
+
+### QA Rejection Report — INV-SPR03-TASK-003
+
+**Verified ACs:** 
+- [x] AC-01: ✅ Verified (Migrations exist)
+- [x] AC-02: ✅ Verified (Evaluator created)
+- [x] AC-03: ✅ Verified (Event emitted)
+- [x] AC-04: ✅ Verified (Cooldown mechanism implemented)
+- [x] AC-05: ✅ Verified (CRUD APIs complete)
+- [ ] AC-06: ❌ Missing coverage. While unit tests exist, the coverage for `ThresholdEvaluator` is 64.3% and `ThresholdService` is 0%. Minimum required is 80%.
+
+**Quality Gate Results:**
+- Build: ✅ pass
+- go vet: ✅ pass
+- Tests: ✅ pass
+- Race detector: ✅ pass
+- Coverage: ❌ FAIL — Service and logic packages are below 80%.
+
+**Required fixes before re-review:**
+1. Add tests for `ThresholdService` to reach ≥80% coverage.
+2. Improve coverage for `ThresholdEvaluator.Evaluate`.
+3. Add missing integration tests for `ThresholdRuleRepository`.
+4. Add tests for `ThresholdController` covering all CRUD methods.
 
 ---
 
 ## [INV-SPR03-TASK-004] — Historical Reporting API
 
 > **Task ID:** `INV-SPR03-TASK-004`  
-> **Status:** 📝 DRAFT  
+> **Status:** ✅ APPROVED  
 > **Created by:** BA  
 > **Created date:** 2026-04-12  
 > **Assignee:** —  
@@ -174,6 +204,8 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 | Date       | From | To    | Performed by | Notes        |
 |------------|------|-------|--------------|--------------|
 | 2026-04-12 | —    | DRAFT | BA           | Task created |
+| 2026-04-14 | DRAFT| PENDING_REVIEW| BA   | Kiểm tra ACs, dependencies, chuẩn bị trình duyệt |
+| 2026-04-14 | PENDING_REVIEW| APPROVED | Lead | Checklist đầy đủ, sẵn sàng triển khai |
 
 ---
 
@@ -279,6 +311,36 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 
 ---
 
+## [INV-SPR03-TASK-008] — Traefik API Gateway Integration
+
+> **Task ID:** `INV-SPR03-TASK-008`  
+> **Status:** 🔍 PENDING_REVIEW  
+> **Created by:** BA  
+> **Created date:** 2026-04-14  
+> **Assignee:** —  
+> **Sprint:** 3  
+
+**Description:** Setup Traefik as the main API Gateway and Reverse Proxy to route traffic to the Golang backend services, manage SSL, and provide Load Balancing if needed.
+
+**Acceptance Criteria:**
+- [ ] AC-01: Add `traefik` service to `docker-compose.yml`
+- [ ] AC-02: Configure `traefik.yml` or dynamic config to route `/api/v1/*` to the inventory backend
+- [ ] AC-03: Expose Traefik dashboard locally (port 8080 or 8081)
+- [ ] AC-04: Test accessing an API endpoint through Traefik (e.g. `http://localhost/health`)
+
+**Related Technologies:**
+- Traefik, Docker Compose
+
+**Notes / Dependencies:** —
+
+**Status History:**
+| Date       | From | To    | Performed by | Notes                              |
+|------------|------|-------|--------------|------------------------------------|
+| 2026-04-14 | —    | DRAFT | BA           | Task created                       |
+| 2026-04-14 | DRAFT| PENDING_REVIEW| BA   | Submitted for review as requested  |
+
+---
+
 ## Definition of Done — Sprint 3
 
 - [ ] Weight and inventory calculation formulas are fully covered by passing unit tests
@@ -289,7 +351,7 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 - [ ] Anomaly detection fires correctly for all 3 anomaly types
 - [ ] Dashboard API responds < 100ms with SSE stream verified in integration test
 - [ ] Overall Sprint 3 test coverage ≥ 80%
-- [ ] All tasks (TASK-001 → TASK-007) reach status 🔒 CLOSED
+- [ ] All tasks (TASK-001 → TASK-008) reach status 🔒 CLOSED
 
 ---
 

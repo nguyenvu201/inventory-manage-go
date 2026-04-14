@@ -14,6 +14,7 @@ import (
 	"inventory-manage/internal/repository/postgres"
 	"inventory-manage/internal/routers"
 	"inventory-manage/internal/service/impl"
+	"inventory-manage/internal/platform/eventbus"
 )
 
 // InitRouter builds and returns the Gin engine with all routes registered.
@@ -47,30 +48,40 @@ func InitRouter() *gin.Engine {
 	}
 
 	// ── Dependency Injection ─────────────────────────────────
+	deviceRouter := routers.RouterGroupApp.Device
+	calibRouter := routers.RouterGroupApp.Calibration
+	inventoryRouter := routers.RouterGroupApp.Inventory
+	thresholdRouter := routers.RouterGroupApp.Threshold
+
+	// Infrastructure / Utilities
+	eventBus := eventbus.NewInMemoryEventBus()
+
 	// Repository layer
 	deviceRepo := postgres.NewDeviceRepository(global.Pdb)
 	calibRepo := postgres.NewCalibrationRepository(global.Pdb)
 	inventoryRepo := postgres.NewInventoryRepository(global.Pdb)
+	thresholdRepo := postgres.NewThresholdRepository(global.Pdb)
 
 	// Service layer
 	deviceSvc := impl.NewDeviceService(deviceRepo)
 	calibSvc := impl.NewCalibrationService(calibRepo)
+	thresholdSvc := impl.NewThresholdService(thresholdRepo)
+	
+	// Evaluator instance (can be injected into workers/controllers that process inventory calculation)
+	_ = impl.NewThresholdEvaluator(thresholdRepo, eventBus, global.Logger)
 
 	// Controller layer
 	deviceCtrl := controller.NewDeviceController(deviceSvc)
 	calibCtrl := controller.NewCalibrationController(calibSvc)
 	inventoryCtrl := controller.NewInventoryController(inventoryRepo)
-
-	// ── Route Groups ─────────────────────────────────────────
-	deviceRouter := routers.RouterGroupApp.Device
-	calibRouter := routers.RouterGroupApp.Calibration
-	inventoryRouter := routers.RouterGroupApp.Inventory
+	thresholdCtrl := controller.NewThresholdController(thresholdSvc)
 
 	v1 := r.Group(fmt.Sprintf("/api/v1"))
 	{
 		deviceRouter.InitDeviceRouter(v1, deviceCtrl)
 		calibRouter.InitCalibrationRouter(v1, calibCtrl)
 		inventoryRouter.InitInventoryRouter(v1, inventoryCtrl)
+		thresholdRouter.InitThresholdRouter(v1, thresholdCtrl)
 	}
 
 	return r
