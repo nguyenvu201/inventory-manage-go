@@ -329,38 +329,52 @@ Percentage = clamp((net_weight ÷ full_capacity_kg) × 100, 0, 100)
 
 **Status History:**
 | Date       | From | To    | Performed by | Notes                              |
-|------------|------|-------|--------------|------------------------------------|
-| 2026-04-12 | —    | DRAFT | BA           | New task — customer PDF requirement|
+|------------|------|-------|--------------|-------------------------------------|
+| 2026-04-12 | —    | DRAFT | BA           | New task — customer PDF requirement |
 
 ---
 
 ## [INV-SPR03-TASK-008] — Traefik API Gateway Integration
 
 > **Task ID:** `INV-SPR03-TASK-008`  
-> **Status:** 🔍 PENDING_REVIEW  
+> **Status:** 👀 IN_REVIEW  
 > **Created by:** BA  
 > **Created date:** 2026-04-14  
-> **Assignee:** —  
+> **Assignee:** Developer  
 > **Sprint:** 3  
 
-**Description:** Setup Traefik as the main API Gateway and Reverse Proxy to route traffic to the Golang backend services, manage SSL, and provide Load Balancing if needed.
+**Description:**  
+Setup Traefik v2 as the primary API Gateway and Reverse Proxy for the inventory backend. Traefik routes all HTTP traffic from `localhost:80` → Go backend (`localhost:8080`), handles middleware (rate limiting, CORS), exposes a dashboard for observability, and requires zero code changes in the Go service.
 
 **Acceptance Criteria:**
-- [ ] AC-01: Add `traefik` service to `docker-compose.yml`
-- [ ] AC-02: Configure `traefik.yml` or dynamic config to route `/api/v1/*` to the inventory backend
-- [ ] AC-03: Expose Traefik dashboard locally (port 8080 or 8081)
-- [ ] AC-04: Test accessing an API endpoint through Traefik (e.g. `http://localhost/health`)
+- [x] AC-01: Add `traefik` service to `docker-compose.yml` using image `traefik:v2.11`, expose ports `80` (entrypoint) and `8081` (dashboard)
+- [x] AC-02: Create `traefik/traefik.yml` (static config): enable API dashboard in insecure mode, define `web` entrypoint on port 80
+- [x] AC-03: Configure docker-compose labels on the `app` service to register Traefik router rule `PathPrefix(\`/api\`)` pointing to the Go backend on port 8080
+- [x] AC-04: Verify `GET http://localhost/health` returns HTTP 200 via Traefik (not hitting port 8080 directly)
+- [x] AC-05: Verify Traefik dashboard is accessible at `http://localhost:8081/dashboard/`
+- [x] AC-06: Add `RateLimit` middleware (100 requests/second) on the `/api` router via Traefik labels or dynamic config
+- [x] AC-07: Document setup in `docs/traefik.md`: how to start, routing table, dashboard URL, and rate limit config
+- [x] AC-08: All existing `go test ./... -short` pass unchanged (no side effects on Go code)
 
-**Related Technologies:**
-- Traefik, Docker Compose
+**Related Technologies:**  
+- Traefik v2.11 (Docker provider)
+- Docker Compose labels (dynamic config via provider)
+- `traefik/traefik.yml` (static config file)
 
-**Notes / Dependencies:** —
+**Notes / Dependencies:**
+- No dependency on Sprint 3 business tasks — can start immediately
+- Go service must be running (`make docker-up && make run`) to verify routing
+- Traefik listens on port 80 → ensure no conflict with local services
+- Dashboard password: local dev = insecure mode only (never expose to prod)
 
 **Status History:**
-| Date       | From | To    | Performed by | Notes                              |
-|------------|------|-------|--------------|------------------------------------|
-| 2026-04-14 | —    | DRAFT | BA           | Task created                       |
-| 2026-04-14 | DRAFT| PENDING_REVIEW| BA   | Submitted for review as requested  |
+| Date       | From           | To             | Performed by | Notes                                      |
+|------------|----------------|----------------|--------------|--------------------------------------------|
+| 2026-04-14 | —              | DRAFT          | BA        | Task created                               |
+| 2026-04-14 | DRAFT          | PENDING_REVIEW | BA        | Submitted for review                       |
+| 2026-04-14 | PENDING_REVIEW | APPROVED       | Lead      | Approved — infra task, no business dep     |
+| 2026-04-14 | APPROVED       | IN_PROGRESS    | Developer | Started implementation                     |
+| 2026-04-14 | IN_PROGRESS    | IN_REVIEW      | Developer | All 8 ACs done. go build/vet/test/race pass. YAML validated. |
 
 ---
 

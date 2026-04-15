@@ -1,0 +1,26 @@
+# traefik/dynamic.yml — Dynamic configuration for Traefik v2.11
+# Inventory Management System — Define routers and services manually
+# since Docker provider cannot reliably access the socket on macOS.
+
+http:
+  routers:
+    inventory-api:
+      rule: "PathPrefix(`/api`) || Path(`/health`) || PathPrefix(`/swagger`)"
+      entryPoints:
+        - "web"
+      service: "inventory-app"
+      middlewares:
+        - "api-ratelimit"
+
+  services:
+    inventory-app:
+      loadBalancer:
+        servers:
+          - url: "http://inventory_app:8080"
+
+  middlewares:
+    api-ratelimit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1s

@@ -1,0 +1,38 @@
+# traefik/traefik.yml — Static configuration for Traefik v2.11
+# Inventory Management System — API Gateway
+# Note: Using File provider instead of Docker provider
+# because Docker socket on macOS Docker Desktop is in a Linux VM
+# and cannot be mounted into containers reliably.
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# ── API & Dashboard ──────────────────────────────────────────────────────────
+api:
+  dashboard: true
+  insecure: true
+
+# ── Ping endpoint ─────────────────────────────────────────────────────────────
+ping: {}
+
+# ── Entrypoints ──────────────────────────────────────────────────────────────
+entryPoints:
+  web:
+    address: ":80"
+  traefik:
+    address: ":8081"
+
+# ── Providers ────────────────────────────────────────────────────────────────
+providers:
+  # File provider: read routes from a dynamic config file
+  # This avoids the Docker socket issue on macOS Docker Desktop
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true   # hot-reload when dynamic.yml changes
+
+# ── Logging ──────────────────────────────────────────────────────────────────
+log:
+  level: INFO
+
+accessLog: {}

@@ -16,6 +16,9 @@ func LoadConfig() {
 	v.AddConfigPath("./config/")
 	v.SetConfigName("local")
 	v.SetConfigType("yaml")
+	v.BindEnv("postgres.host", "DB_HOST")
+	v.BindEnv("redis.host", "REDIS_HOST")
+	v.BindEnv("mqtt.broker", "MQTT_BROKER")
 
 	if err := v.ReadInConfig(); err != nil {
 		panic(fmt.Sprintf("LoadConfig: failed to read config file: %v", err))

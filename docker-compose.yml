@@ -1,9 +1,31 @@
 # docker-compose.yml — Inventory Management System
 # Usage:
 #   Infrastructure only (DB + MQTT): docker compose up -d
-#   With Go app:                      docker compose --profile app up -d
+#   With Go app:                      docker compose --profile app up
+#   With Traefik:                     docker compose --profile app up (Traefik starts with app profile)
 
 services:
+  # ── Traefik API Gateway ──────────────────────────────────────────────────────
+  traefik:
+    image: traefik:v2.11
+    container_name: inventory_traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"        # HTTP entrypoint (routes to backend)
+      - "8081:8081"    # Traefik dashboard
+    volumes:
+      # Read-only static config
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      # Dynamic config file
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    networks:
+      - inventory_net
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # ── PostgreSQL + TimescaleDB ────────────────────────────────────────────────
   db:
     image: timescale/timescaledb:latest-pg15
@@ -24,6 +46,21 @@ services:
       retries: 5
     networks:
       - inventory_net
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: inventory_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - inventory_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # ── MQTT Broker (Mosquitto) ─────────────────────────────────────────────────
   mosquitto:
@@ -57,13 +94,17 @@ services:
       - .env
     environment:
       DB_HOST: db
+      REDIS_HOST: redis
       MQTT_BROKER: mosquitto
-    ports:
-      - "${LISTEN_ADDR_PORT:-8080}:8080"
+    # No direct port exposure — traffic flows through Traefik only
+    expose:
+      - "8080"
     depends_on:
       db:
         condition: service_healthy
       mosquitto:
+        condition: service_healthy
+      traefik:
         condition: service_healthy
     networks:
       - inventory_net
@@ -76,3 +117,4 @@ volumes:
 networks:
   inventory_net:
     driver: bridge
+    name: inventory_net   # static name — prevents Docker from prefixing project directory name

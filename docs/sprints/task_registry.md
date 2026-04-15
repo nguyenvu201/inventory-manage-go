@@ -68,7 +68,7 @@
 | INV-SPR03-TASK-005    | Stock-out / Day Zero Forecasting       | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-006    | Consumption Anomaly Detection          | 📝 DRAFT   | —        | 2026-04-12  |
 | INV-SPR03-TASK-007    | Inventory Dashboard API                | 📝 DRAFT   | —        | 2026-04-12  |
-| INV-SPR03-TASK-008    | Traefik API Gateway Integration        | 🔍 PENDING_REVIEW | — | 2026-04-14  |
+| INV-SPR03-TASK-008    | Traefik API Gateway Integration        | 👀 IN_REVIEW       | Developer | 2026-04-14  |
 
 > **Amended tasks:** TASK-001 (AC-08 added) — customer PDF Rev 2  
 > **New tasks:** TASK-005, TASK-006, TASK-007 — customer PDF Rev 2
@@ -132,6 +132,7 @@
 | 2   | 2026-04-12 | BA         | +6 new tasks, +5 amended tasks based on customer PDF requirement |
 | 3   | 2026-04-13 | BA         | Sprint 1 Closed. Sprint 2 Started.                               |
 | 4   | 2026-04-14 | BA         | Added TASK-008 (Traefik integration) to Sprint 3                 |
+| 5   | 2026-04-14 | Lead       | TASK-008 status APPROVED — infra task, no business dependency    |
 
 ---
 
