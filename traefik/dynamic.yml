@@ -16,7 +16,7 @@ http:
     inventory-app:
       loadBalancer:
         servers:
-          - url: "http://inventory_app:8080"
+          - url: "http://host.docker.internal:8080"
 
   middlewares:
     api-ratelimit:
