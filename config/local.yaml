@@ -24,8 +24,8 @@ mqtt:
   broker: localhost
   port: 1883
   clientId: inventory-manage-dev
-  username: ""
-  password: ""
+  username: "inventory_app"      # khớp với user trong passwd file
+  password: "change-me-locally"  # đổi sau khi tạo passwd file
 
 logger:
   level: debug

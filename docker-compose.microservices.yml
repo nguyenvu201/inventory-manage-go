@@ -1,0 +1,213 @@
+# docker-compose.microservices.yml — Microservice Architecture
+# Inventory Management System — IoT Scale
+#
+# Usage:
+#   Infrastructure only:    docker compose -f docker-compose.microservices.yml up -d db redis mosquitto traefik
+#   All services:           docker compose -f docker-compose.microservices.yml --profile app up --build
+#   View Traefik dashboard: http://localhost:8081
+#
+# NOTE: ms-ingestion, ms-inventory-core, ms-action hiện tại đều build từ cùng 1 Dockerfile (monolith).
+#       Traefik phân luồng request theo URL path đến đúng container.
+#       Khi code được tách thành separate services, chỉ cần đổi build context.
+
+services:
+
+  # ── Traefik API Gateway ─────────────────────────────────────────────────────
+  traefik:
+    image: traefik:v2.11
+    container_name: inventory_traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"       # HTTP entrypoint — tất cả traffic vào đây
+      - "8081:8081"   # Traefik dashboard — http://localhost:8081
+    volumes:
+      - ./traefik/traefik.microservices.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.microservices.yml:/etc/traefik/dynamic.yml:ro
+    networks:
+      - inventory_net
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── PostgreSQL + TimescaleDB ─────────────────────────────────────────────────
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: inventory_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-inventory_db}
+      POSTGRES_USER: ${DB_USER:-inventory_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-inventory_secret}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-inventory_user} -d ${DB_NAME:-inventory_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - inventory_net
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: inventory_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - inventory_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── MQTT Broker ──────────────────────────────────────────────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: inventory_mqtt
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+      - "9001:9001"
+    volumes:
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqttdata:/mosquitto/data
+      - mqttlog:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/#' -C 1 -h localhost -p 1883 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - inventory_net
+
+  # ── ms-ingestion ─────────────────────────────────────────────────────────────
+  # Trách nhiệm: MQTT receiver, telemetry validator, device registry, calibration
+  # Routes: /api/v1/devices  /api/v1/calibration  /api/v1/telemetry  /health  /swagger
+  ms-ingestion:
+    profiles: ["app"]
+    build:
+      context: .         # TODO: đổi thành ./services/ms-ingestion khi code được tách
+      dockerfile: Dockerfile
+    container_name: inventory_ms_ingestion
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      REDIS_HOST: redis
+      MQTT_BROKER: mosquitto
+      SERVICE_NAME: ms-ingestion   # dùng để phân biệt trong log
+    expose:
+      - "8080"            # chỉ expose nội bộ — Traefik truy cập qua tên container
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+      traefik:
+        condition: service_healthy
+    networks:
+      - inventory_net
+    labels:
+      - "service=ms-ingestion"
+      - "domain=ingestion"
+
+  # ── ms-inventory-core ────────────────────────────────────────────────────────
+  # Trách nhiệm: weight conversion, inventory calculation, threshold rules, reporting
+  # Routes: /api/v1/inventory  /api/v1/rules  /api/v1/reports
+  ms-inventory-core:
+    profiles: ["app"]
+    build:
+      context: .         # TODO: đổi thành ./services/ms-inventory-core khi code được tách
+      dockerfile: Dockerfile
+    container_name: inventory_ms_inventory_core
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      REDIS_HOST: redis
+      MQTT_BROKER: mosquitto
+      SERVICE_NAME: ms-inventory-core
+    expose:
+      - "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ms-ingestion:
+        condition: service_started
+    networks:
+      - inventory_net
+    labels:
+      - "service=ms-inventory-core"
+      - "domain=inventory"
+
+  # ── ms-action ────────────────────────────────────────────────────────────────
+  # Trách nhiệm: alert/notification, ERP export, FTP upload, reorder workflow
+  # Routes: /api/v1/notifications  /api/v1/erp  /api/v1/requisitions
+  ms-action:
+    profiles: ["app"]
+    build:
+      context: .         # TODO: đổi thành ./services/ms-action khi code được tách
+      dockerfile: Dockerfile
+    container_name: inventory_ms_action
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      REDIS_HOST: redis
+      SERVICE_NAME: ms-action
+    expose:
+      - "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ms-inventory-core:
+        condition: service_started
+    networks:
+      - inventory_net
+    labels:
+      - "service=ms-action"
+      - "domain=action"
+
+  # ── ms-ui ────────────────────────────────────────────────────────────────────
+  # Trách nhiệm: phục vụ static files cho Management Dashboard
+  # Routes: /ui
+  ms-ui:
+    profiles: ["app"]
+    build:
+      context: ./services/ms-ui
+      dockerfile: Dockerfile
+    container_name: inventory_ms_ui
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - inventory_net
+    labels:
+      - "service=ms-ui"
+      - "domain=ui"
+
+volumes:
+  pgdata:
+  mqttdata:
+  mqttlog:
+
+networks:
+  inventory_net:
+    driver: bridge
+    name: inventory_net

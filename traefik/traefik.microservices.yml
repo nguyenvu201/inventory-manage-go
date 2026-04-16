@@ -1,0 +1,34 @@
+# traefik/traefik.microservices.yml — Static config cho kiến trúc microservices
+# Dùng kèm với docker-compose.microservices.yml
+# macOS: Vẫn dùng File provider (không dùng Docker socket)
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# ── API & Dashboard ────────────────────────────────────────────────────────────
+api:
+  dashboard: true
+  insecure: true   # http://localhost:8081
+
+# ── Ping endpoint ──────────────────────────────────────────────────────────────
+ping: {}
+
+# ── Entrypoints ────────────────────────────────────────────────────────────────
+entryPoints:
+  web:
+    address: ":80"
+  traefik:
+    address: ":8081"
+
+# ── Providers ──────────────────────────────────────────────────────────────────
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true    # hot-reload khi dynamic.yml thay đổi
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+log:
+  level: INFO
+
+accessLog: {}

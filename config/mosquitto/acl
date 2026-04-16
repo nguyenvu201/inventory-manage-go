@@ -1,0 +1,26 @@
+# config/mosquitto/acl — Access Control List
+# Cú pháp:
+#   user <username>
+#   topic read  <topic>    ← chỉ được subscribe
+#   topic write <topic>    ← chỉ được publish
+#   topic readwrite <topic> ← cả hai
+
+# ── inventory_app (Go backend) ────────────────────────────────────────────────
+# App chỉ cần: subscribe telemetry + publish status của chính mình
+user inventory_app
+topic read  application/#                        # nhận dữ liệu từ gateway
+topic write inventory/status/inventory_app       # publish will message của mình
+topic readwrite inventory/commands/#             # nhận lệnh, trả lời
+
+# ── chirpstack_gw (IoT Gateway — ChirpStack) ─────────────────────────────────
+# Gateway chỉ cần push dữ liệu lên, không được đọc gì khác
+user chirpstack_gw
+topic write application/#                        # publish telemetry lên
+topic read  inventory/commands/#                 # nhận lệnh downlink (nếu cần)
+
+# ── mqtt_monitor (Dashboard / MQTT Explorer — read only) ─────────────────────
+# Chỉ được nhìn, không được ghi
+user mqtt_monitor
+topic read  application/#
+topic read  inventory/#
+topic read  $SYS/#                               # xem system stats của broker

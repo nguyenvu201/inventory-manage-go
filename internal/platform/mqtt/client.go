@@ -6,6 +6,7 @@ import (
 	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -26,11 +27,28 @@ func NewClientOptions(host string, port int, clientID, username, password string
 	if password != "" {
 		opts.SetPassword(password)
 	}
+	// Will message: broker publish khi client mất kết nối đột ngột
+	// Hữu ích để các service khác biết ingestion service bị down
+	opts.SetWill(
+		"inventory/status/"+clientID,
+		`{"status":"offline"}`,
+		1,    // QoS 1
+		true, // retain
+	)
 
 	opts.SetAutoReconnect(true)
-	opts.SetMaxReconnectInterval(2 * time.Second)
-	opts.SetKeepAlive(60 * time.Second)
+	// Exponential backoff: bắt đầu từ 1s, tăng dần tới 30s
+	// Tránh reconnect storm khi broker restart
+	opts.SetConnectRetryInterval(1 * time.Second)
+	opts.SetMaxReconnectInterval(30 * time.Second)
+	opts.SetKeepAlive(30 * time.Second)  // phải nhỏ hơn broker's max_keepalive
 	opts.SetPingTimeout(10 * time.Second)
+	// CleanSession=false: giữ lại subscriptions sau khi reconnect
+	// Broker nhớ session → không cần re-subscribe thủ công
+	opts.SetCleanSession(false)
+	// Thêm suffix ngẫu nhiên vào clientID để tránh duplicate client conflict
+	// (2 instance cùng clientID → broker kick cái cũ → reconnect loop)
+	opts.SetClientID(clientID + "-" + uuid.New().String()[:8])
 
 	opts.SetOnConnectHandler(func(c paho.Client) {
 		log.Info().Msg("MQTT broker connected")

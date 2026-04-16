@@ -1,0 +1,147 @@
+# traefik/dynamic.microservices.yml — Dynamic routing cho kiến trúc microservices
+# Traefik đọc file này và tự động hot-reload khi có thay đổi
+#
+# Mỗi microservice được route theo URL path prefix:
+#
+#   /api/v1/devices, /api/v1/calibration, /api/v1/telemetry, /health, /swagger
+#     → ms-ingestion:8080
+#
+#   /api/v1/inventory, /api/v1/rules, /api/v1/reports
+#     → ms-inventory-core:8080
+#
+#   /api/v1/notifications, /api/v1/erp, /api/v1/requisitions
+#     → ms-action:8080
+#
+#   /ui
+#     → ms-ui:80
+
+http:
+
+  # ── Routers (quy tắc phân luồng) ────────────────────────────────────────────
+
+  routers:
+
+    # ms-ingestion: device, calibration, telemetry, health check, swagger
+    ingestion-router:
+      rule: >-
+        PathPrefix(`/api/v1/devices`) ||
+        PathPrefix(`/api/v1/calibration`) ||
+        PathPrefix(`/api/v1/telemetry`) ||
+        Path(`/health`) ||
+        PathPrefix(`/swagger`)
+      entryPoints:
+        - web
+      service: ms-ingestion
+      middlewares:
+        - request-id
+        - rate-limit
+      priority: 10
+
+    # ms-inventory-core: inventory snapshots, threshold rules, reports
+    inventory-router:
+      rule: >-
+        PathPrefix(`/api/v1/inventory`) ||
+        PathPrefix(`/api/v1/rules`) ||
+        PathPrefix(`/api/v1/reports`)
+      entryPoints:
+        - web
+      service: ms-inventory-core
+      middlewares:
+        - request-id
+        - rate-limit
+      priority: 10
+
+    # ms-action: notifications, ERP export, purchase requisitions
+    action-router:
+      rule: >-
+        PathPrefix(`/api/v1/notifications`) ||
+        PathPrefix(`/api/v1/erp`) ||
+        PathPrefix(`/api/v1/requisitions`)
+      entryPoints:
+        - web
+      service: ms-action
+      middlewares:
+        - request-id
+        - rate-limit
+      priority: 10
+
+    # ms-ui: Management Dashboard (Vue 3 static files)
+    ui-router:
+      rule: PathPrefix(`/ui`)
+      entryPoints:
+        - web
+      service: ms-ui
+      priority: 5
+
+  # ── Services (địa chỉ backend) ───────────────────────────────────────────────
+  # Traefik trong container dùng tên container của Docker network để reach các services
+  # Format: http://<container_name>:<port>
+
+  services:
+
+    ms-ingestion:
+      loadBalancer:
+        servers:
+          - url: "http://inventory_ms_ingestion:8080"
+        healthCheck:
+          path: /health
+          interval: 10s
+          timeout: 3s
+
+    ms-inventory-core:
+      loadBalancer:
+        servers:
+          - url: "http://inventory_ms_inventory_core:8080"
+        healthCheck:
+          path: /health
+          interval: 10s
+          timeout: 3s
+
+    ms-action:
+      loadBalancer:
+        servers:
+          - url: "http://inventory_ms_action:8080"
+        healthCheck:
+          path: /health
+          interval: 10s
+          timeout: 3s
+
+    ms-ui:
+      loadBalancer:
+        servers:
+          - url: "http://inventory_ms_ui:80"
+
+  # ── Middlewares ──────────────────────────────────────────────────────────────
+
+  middlewares:
+
+    # Inject X-Request-ID vào mỗi request (dùng cho trace_id trong log)
+    request-id:
+      headers:
+        customRequestHeaders:
+          X-Request-ID: "{{ uuid }}"
+
+    # Rate limiting chung: 100 req/s, burst 50
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1s
+
+    # CORS middleware (enable nếu UI gọi API từ domain khác)
+    cors-headers:
+      headers:
+        accessControlAllowOriginList:
+          - "http://localhost:3000"
+          - "http://localhost:5173"
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders:
+          - "Content-Type"
+          - "Authorization"
+          - "X-Request-ID"
+        accessControlMaxAge: 86400
