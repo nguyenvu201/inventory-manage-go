@@ -22,6 +22,7 @@ func InitMQTT() {
 
 	client, err := inventorymqtt.NewClient(
 		m.Broker, m.Port, m.ClientID, m.Username, m.Password,
+		m.TLSEnabled,
 	)
 	if err != nil {
 		loggerOrPanic("InitMQTT: failed to create MQTT client", err)

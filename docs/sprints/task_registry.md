@@ -2,7 +2,7 @@
 
 > **Master list of all tasks following FDA naming convention**  
 > **Standards:** IEC 62304 | FDA 21 CFR Part 11  
-> **Last updated:** 2026-04-12 (Rev 2 — customer PDF requirement update)
+> **Last updated:** 2026-04-19 (Rev 6 — Sprint 6 Firebase deployment added)
 
 ---
 
@@ -111,6 +111,24 @@
 
 ---
 
+## Sprint 6 — Firebase & Cloud Deployment
+
+| Task ID               | Task Name                                        | Status    | Assignee | Updated     |
+|-----------------------|--------------------------------------------------|-----------|----------|-------------|
+| INV-SPR06-TASK-001    | Chuẩn bị môi trường & phân tích gap              | 📝 DRAFT  | —        | 2026-04-19  |
+| INV-SPR06-TASK-002    | Containerize & tối ưu Docker cho Cloud Run        | 📝 DRAFT  | —        | 2026-04-19  |
+| INV-SPR06-TASK-003    | Cấu hình Cloud SQL (PostgreSQL managed)           | 📝 DRAFT  | —        | 2026-04-19  |
+| INV-SPR06-TASK-004    | Deploy Go backend lên Google Cloud Run            | 📝 DRAFT  | —        | 2026-04-19  |
+| INV-SPR06-TASK-005    | Cấu hình MQTT Broker trên cloud                   | 📝 DRAFT  | —        | 2026-04-19  |
+| INV-SPR06-TASK-006    | Firebase Hosting & rewrites tới Cloud Run         | 📝 DRAFT  | —        | 2026-04-19  |
+| INV-SPR06-TASK-007    | CI/CD pipeline với GitHub Actions                 | 📝 DRAFT  | —        | 2026-04-19  |
+| INV-SPR06-TASK-008    | Environment config & secrets management           | 📝 DRAFT  | —        | 2026-04-19  |
+| INV-SPR06-TASK-009    | Customer preview URL & smoke testing              | 📝 DRAFT  | —        | 2026-04-19  |
+
+**Sprint 6 Status:** 🔲 Not Started | Tasks: 9 total / 0 done | Priority: CRITICAL
+
+---
+
 ## Summary
 
 | Sprint   | Total | DRAFT | IN_PROGRESS | VERIFIED | CLOSED |
@@ -120,19 +138,21 @@
 | Sprint 3 | 8     | 4     | 0           | 0        | 2      |
 | Sprint 4 | 6     | 6     | 0           | 0        | 0      |
 | Sprint 5 | 5     | 5     | 0           | 0        | 0      |
-| **Total**| **26**| **26**| **0**       | **0**    | **0**  |
+| Sprint 6 | 9     | 9     | 0           | 0        | 0      |
+| **Total**| **35**| **27**| **0**       | **1**    | **6**  |
 
 ---
 
 ## Change Log
 
-| Rev | Date       | Changed by | Description                                                      |
-|-----|------------|------------|------------------------------------------------------------------|
-| 1   | 2026-04-12 | BA         | Initial registry — 20 tasks across 5 sprints                     |
-| 2   | 2026-04-12 | BA         | +6 new tasks, +5 amended tasks based on customer PDF requirement |
-| 3   | 2026-04-13 | BA         | Sprint 1 Closed. Sprint 2 Started.                               |
-| 4   | 2026-04-14 | BA         | Added TASK-008 (Traefik integration) to Sprint 3                 |
-| 5   | 2026-04-14 | Lead       | TASK-008 status APPROVED — infra task, no business dependency    |
+| Rev | Date       | Changed by | Description                                                                          |
+|-----|------------|------------|--------------------------------------------------------------------------------------|
+| 1   | 2026-04-12 | BA         | Initial registry — 20 tasks across 5 sprints                                         |
+| 2   | 2026-04-12 | BA         | +6 new tasks, +5 amended tasks based on customer PDF requirement                     |
+| 3   | 2026-04-13 | BA         | Sprint 1 Closed. Sprint 2 Started.                                                   |
+| 4   | 2026-04-14 | BA         | Added TASK-008 (Traefik integration) to Sprint 3                                     |
+| 5   | 2026-04-14 | Lead       | TASK-008 status APPROVED — infra task, no business dependency                        |
+| 6   | 2026-04-19 | BA         | Sprint 6 added — Firebase & Cloud Deployment (9 tasks). Customer preview blocker CR. |
 
 ---
 

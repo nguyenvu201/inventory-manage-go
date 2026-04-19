@@ -21,11 +21,20 @@ redis:
   poolSize: 10
 
 mqtt:
-  broker: localhost
-  port: 1883
+  # ── Local Mosquitto (Docker) ──────────────────────────────────────────────
+  # broker: localhost
+  # port: 1883
+  # tlsEnabled: false
+  # username: "inventory_app"
+  # password: "change-me-locally"
+  #
+  # ── HiveMQ Cloud (Customer Preview) ──────────────────────────────────────
+  broker: 29ae9d12a8c54f1295a5d2e1e4391c6c.s1.eu.hivemq.cloud
+  port: 8883
+  tlsEnabled: true
   clientId: inventory-manage-dev
-  username: "inventory_app"      # khớp với user trong passwd file
-  password: "change-me-locally"  # đổi sau khi tạo passwd file
+  username: "YOUR_HIVEMQ_USERNAME"   # → Access Management tab trên HiveMQ Cloud
+  password: "YOUR_HIVEMQ_PASSWORD"   # → thay bằng password thật, KHÔNG commit lên git
 
 logger:
   level: debug

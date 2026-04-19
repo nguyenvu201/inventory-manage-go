@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"time"
 
@@ -16,9 +17,22 @@ type Client struct {
 }
 
 // NewClientOptions configures the MQTT client options with auto-reconnect and exponential backoff (AC-03).
-func NewClientOptions(host string, port int, clientID, username, password string) *paho.ClientOptions {
+// tlsEnabled=true → dùng ssl:// scheme + TLS config (bắt buộc với HiveMQ Cloud port 8883).
+func NewClientOptions(host string, port int, clientID, username, password string, tlsEnabled bool) *paho.ClientOptions {
 	opts := paho.NewClientOptions()
-	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", host, port))
+
+	// Chọn scheme: ssl:// cho TLS (HiveMQ Cloud), tcp:// cho plain MQTT (local Mosquitto)
+	scheme := "tcp"
+	if tlsEnabled {
+		scheme = "ssl"
+		opts.SetTLSConfig(&tls.Config{
+			// HiveMQ Cloud dùng certificate hợp lệ từ Let's Encrypt
+			// → InsecureSkipVerify=false (mặc định) là đúng, không cần override
+			InsecureSkipVerify: false,
+			MinVersion:         tls.VersionTLS12,
+		})
+	}
+	opts.AddBroker(fmt.Sprintf("%s://%s:%d", scheme, host, port))
 	opts.SetClientID(clientID)
 	
 	if username != "" {
@@ -62,9 +76,9 @@ func NewClientOptions(host string, port int, clientID, username, password string
 }
 
 // NewClient initializes a new MQTT client using the provided connection settings.
-func NewClient(host string, port int, clientID, username, password string) (*Client, error) {
-	opts := NewClientOptions(host, port, clientID, username, password)
-	
+// tlsEnabled: true khi kết nối tới cloud broker (HiveMQ Cloud, port 8883).
+func NewClient(host string, port int, clientID, username, password string, tlsEnabled bool) (*Client, error) {
+	opts := NewClientOptions(host, port, clientID, username, password, tlsEnabled)
 	client := paho.NewClient(opts)
 	return &Client{client: client}, nil
 }

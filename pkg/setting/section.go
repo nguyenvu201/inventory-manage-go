@@ -41,11 +41,14 @@ type RedisSetting struct {
 
 // MQTTSetting contains the Mosquitto / ChirpStack broker config.
 type MQTTSetting struct {
-	Broker   string `mapstructure:"broker"`
-	Port     int    `mapstructure:"port"`
-	ClientID string `mapstructure:"clientId"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
+	Broker     string `mapstructure:"broker"`
+	Port       int    `mapstructure:"port"`
+	ClientID   string `mapstructure:"clientId"`
+	Username   string `mapstructure:"username"`
+	Password   string `mapstructure:"password"`
+	// TLSEnabled: true khi kết nối tới cloud broker dùng TLS (HiveMQ Cloud port 8883)
+	// Local Mosquitto: false (plain tcp port 1883)
+	TLSEnabled bool   `mapstructure:"tlsEnabled"`
 }
 
 // LoggerSetting controls Zap + Lumberjack log rotation.

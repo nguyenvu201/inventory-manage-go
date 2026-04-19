@@ -2,25 +2,32 @@
 # mqtt_test.sh — Test MQTT broker và ingestion pipeline
 # Usage:
 #   chmod +x mqtt_test.sh
-#   ./mqtt_test.sh              # chạy tất cả test cases
+#   ./mqtt_test.sh              # local Mosquitto (localhost:1883)
 #   ./mqtt_test.sh happy        # chỉ test happy path
-#   ./mqtt_test.sh duplicate    # test duplicate packet
-#   ./mqtt_test.sh invalid      # test validation errors
+#
+# HiveMQ Cloud:
+#   MQTT_BROKER=29ae9d12a8c54f1295a5d2e1e4391c6c.s1.eu.hivemq.cloud \
+#   MQTT_PORT=8883 \
+#   MQTT_TLS=true \
+#   MQTT_USER=your_username \
+#   MQTT_PASS=your_password \
+#   ./mqtt_test.sh happy
 
 BROKER=${MQTT_BROKER:-localhost}
 PORT=${MQTT_PORT:-1883}
 TOPIC="application/1/device/aabbccdd11223344/event/up"
 DEVICE_EUI="aabbccdd11223344"
-# Credentials — set qua env var hoặc để trống nếu broker chưa bật auth
 MQTT_USER=${MQTT_USER:-""}
 MQTT_PASS=${MQTT_PASS:-""}
+# TLS mode: true khi kết nối HiveMQ Cloud
+MQTT_TLS=${MQTT_TLS:-false}
 
 # ── Color output ──────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 log_info()  { echo -e "${BLUE}[INFO]${NC}  $1"; }
 log_ok()    { echo -e "${GREEN}[PASS]${NC}  $1"; }
@@ -33,9 +40,6 @@ check_deps() {
     log_fail "mosquitto_pub not found. Install with:"
     echo "  macOS:  brew install mosquitto"
     echo "  Ubuntu: sudo apt install mosquitto-clients"
-    echo ""
-    echo "  OR dùng docker để publish:"
-    echo "  docker exec inventory_mqtt mosquitto_pub -h localhost -p 1883 ..."
     exit 1
   fi
   log_ok "mosquitto_pub found: $(mosquitto_pub --version 2>&1 | head -1)"
@@ -45,9 +49,23 @@ check_deps() {
 publish() {
   local topic="$1"
   local payload="$2"
-  local auth_flags=""
-  [ -n "$MQTT_USER" ] && auth_flags="-u $MQTT_USER -P $MQTT_PASS"
-  mosquitto_pub -h "$BROKER" -p "$PORT" $auth_flags -t "$topic" -m "$payload"
+  local flags=""
+
+  # Auth
+  [ -n "$MQTT_USER" ] && flags="$flags -u $MQTT_USER -P $MQTT_PASS"
+
+  # TLS — HiveMQ Cloud dùng Let's Encrypt (system CA)
+  if [ "$MQTT_TLS" = "true" ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      # macOS: brew install ca-certificates
+      flags="$flags --capath /opt/homebrew/etc/ca-certificates"
+    else
+      # Linux
+      flags="$flags --capath /etc/ssl/certs"
+    fi
+  fi
+
+  mosquitto_pub -h "$BROKER" -p "$PORT" $flags -t "$topic" -m "$payload"
   if [ $? -eq 0 ]; then
     log_ok "Published to: $topic"
   else

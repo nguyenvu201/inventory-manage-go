@@ -24,11 +24,14 @@ type Config struct {
 	DBSSLMode  string `env:"DB_SSL_MODE"  envDefault:"disable"`
 
 	// ── MQTT / ChirpStack ─────────────────────────────────────────────────────
-	MQTTBroker   string `env:"MQTT_BROKER,required"`
-	MQTTPort     int    `env:"MQTT_PORT"      envDefault:"1883"`
-	MQTTClientID string `env:"MQTT_CLIENT_ID" envDefault:"inventory-manage"`
-	MQTTUsername string `env:"MQTT_USERNAME"`
-	MQTTPassword string `env:"MQTT_PASSWORD"`
+	MQTTBroker     string `env:"MQTT_BROKER,required"`
+	MQTTPort       int    `env:"MQTT_PORT"       envDefault:"1883"`
+	MQTTClientID   string `env:"MQTT_CLIENT_ID"  envDefault:"inventory-manage"`
+	MQTTUsername   string `env:"MQTT_USERNAME"`
+	MQTTPassword   string `env:"MQTT_PASSWORD"`
+	// MQTTTLSEnabled: true khi kết nối tới cloud broker dùng TLS (HiveMQ Cloud port 8883)
+	// Local Mosquitto: false (plain tcp port 1883)
+	MQTTTLSEnabled bool   `env:"MQTT_TLS_ENABLED" envDefault:"false"`
 
 	// ── Migrations ────────────────────────────────────────────────────────────
 	MigrationsDir string `env:"MIGRATIONS_DIR" envDefault:"migrations"`
